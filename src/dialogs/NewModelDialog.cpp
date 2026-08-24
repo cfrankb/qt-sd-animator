@@ -89,20 +89,10 @@ NewModelDialog::NewModelDialog(QWidget* parent)
     height_spin->setValue(512);
     form_layout->addWidget(height_spin);
 
-    form_layout->addWidget(new QLabel("Model Base Path:"));
-    auto* bp_layout = new QHBoxLayout;
-    base_path_edit = new QLineEdit;
-    bp_layout->addWidget(base_path_edit);
-    auto* browse_btn = new QPushButton("Browse...");
-    bp_layout->addWidget(browse_btn);
-    form_layout->addLayout(bp_layout);
-
-    connect(browse_btn, &QPushButton::clicked, [this]() {
-        QString dir = QFileDialog::getExistingDirectory(this, "Select Model Base Path");
-        if (!dir.isEmpty()) {
-            base_path_edit->setText(dir);
-        }
-    });
+    form_layout->addWidget(new QLabel("Source Image Required:"));
+    source_image_required_check = new QCheckBox;
+    source_image_required_check->setChecked(true);
+    form_layout->addWidget(source_image_required_check);
 
     auto* btn_layout = new QHBoxLayout;
     auto* ok_btn = new QPushButton("OK");
@@ -114,10 +104,6 @@ NewModelDialog::NewModelDialog(QWidget* parent)
     connect(ok_btn, &QPushButton::clicked, this, [this]() {
         if (name_edit->text().isEmpty()) {
             QMessageBox::warning(this, "Validation Error", "Model name is required.");
-            return;
-        }
-        if (base_path_edit->text().isEmpty()) {
-            QMessageBox::warning(this, "Validation Error", "Model base path is required.");
             return;
         }
         accept();

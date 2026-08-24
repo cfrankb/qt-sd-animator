@@ -49,6 +49,12 @@ MainWindow::MainWindow(QWidget* parent)
         connect(act, &QAction::triggered, [this, path]() {
             SettingsManager::instance().addToRecentlyOpened(path);
             SettingsManager::instance().save();
+            if (SettingsManager::instance().loadSettings(path)) {
+                refreshDropDowns();
+            }
+            currentSavePath = path;
+            SettingsManager::instance().addToRecentlyOpened(path);
+            setWindowTitle("qt-sd-animator - " + QFileInfo(path).fileName());
         });
         recent_menu->addAction(act);
     }
@@ -94,9 +100,11 @@ MainWindow::MainWindow(QWidget* parent)
         model_combo->addItem(m.name, QVariant(m.uuid));
     }
     model_layout->addWidget(model_combo);
+    /*
     auto* new_model_btn = new QPushButton("NEW MODEL");
     model_layout->addWidget(new_model_btn);
     connect(new_model_btn, &QPushButton::clicked, this, &MainWindow::newModel);
+*/
     ws_layout->addLayout(model_layout);
 
     // Preset selector
@@ -161,23 +169,37 @@ MainWindow::MainWindow(QWidget* parent)
     neg_layout->addWidget(negative_prompt_edit);
     ws_layout->addLayout(neg_layout);
 
-    // Output destination
+    // Seed
+    auto* seed_layout = new QHBoxLayout;
+    seed_layout->addWidget(new QLabel("Seed:"));
+    seed_edit = new QLineEdit;
+    seed_edit->setPlaceholderText("Enter seed value...");
+    seed_edit->setFixedWidth(200);
+    seed_layout->addWidget(seed_edit);
+    random_seed_btn = new QPushButton("Random");
+    seed_layout->addWidget(random_seed_btn);
+    connect(random_seed_btn, &QPushButton::clicked, this, [this]() {
+        seed_edit->setText(QString::number(QRandomGenerator::global()->generate()));
+    });
+    ws_layout->addLayout(seed_layout);
+
+    // Basename
     auto* dest_layout = new QHBoxLayout;
-    dest_layout->addWidget(new QLabel("Output Destination:"));
-    output_dest_edit = new QLineEdit;
-    output_dest_edit->setPlaceholderText("/path/to/output");
-    output_dest_edit->setFixedWidth(400);
-    dest_layout->addWidget(output_dest_edit);
-    auto* browse_dest_btn = new QPushButton("Browse...");
-    dest_layout->addWidget(browse_dest_btn);
+    dest_layout->addWidget(new QLabel("Basename:"));
+    filename_edit = new QLineEdit;
+    filename_edit->setPlaceholderText("basename");
+    filename_edit->setFixedWidth(400);
+    dest_layout->addWidget(filename_edit);
+    //auto* browse_dest_btn = new QPushButton("Browse...");
+    //dest_layout->addWidget(browse_dest_btn);
     ws_layout->addLayout(dest_layout);
-    connect(browse_dest_btn, &QPushButton::clicked, [this]() {
+    /*connect(browse_dest_btn, &QPushButton::clicked, [this]() {
         QString dir = QFileDialog::getExistingDirectory(this, "Select Output Destination");
         if (!dir.isEmpty()) {
             output_dest_edit->setText(dir);
             lastOutputDest = dir;
         }
-    });
+    });*/
 
     // Datetime checkbox
     auto* datetime_layout = new QHBoxLayout;
@@ -204,12 +226,19 @@ MainWindow::MainWindow(QWidget* parent)
     output_widget->setPlaceholderText("Output will appear here...");
     mainLayout->addWidget(output_widget);
 
+    // Execution time label
+    execution_time_label = new QLabel("Execution Time: 00:00:00");
+    execution_time_label->setAlignment(Qt::AlignRight);
+    execution_time_label->setStyleSheet("font-weight: bold; font-size: 14px;");
+    mainLayout->addWidget(execution_time_label);
+
     // Connect preset selection to populate prompt fields
     connect(preset_combo, QOverload<int>::of(&QComboBox::currentIndexChanged), [this](int index) {
         if (index < 0 || index >= SettingsManager::instance().presets.size()) return;
         const auto& p = SettingsManager::instance().presets[index];
         prompt_edit->setPlainText(p.prompt);
         negative_prompt_edit->setPlainText(p.negativePrompt);
+        seed_edit->setText(p.seed);
     });
 
     // Load saved settings
@@ -219,11 +248,46 @@ MainWindow::MainWindow(QWidget* parent)
     // Status bar
     statusBar()->show();
     statusBar()->showMessage("Ready");
+
+    // Execution timer
+    execution_timer = new QTimer(this);
+    connect(execution_timer, &QTimer::timeout, this, [this]() {
+        QString timeStr =executionTimeStr();
+        execution_time_label->setText("Execution Time: " + timeStr);
+    });
+}
+
+
+QString MainWindow::executionTimeStr()
+{
+    qint64 elapsedMs = execution_timer_elapsed.elapsed();
+    int totalSeconds = elapsedMs / 1000;
+    int hours = totalSeconds / 3600;
+    int minutes = (totalSeconds % 3600) / 60;
+    int seconds = totalSeconds % 60;
+    return QString("%1:%2:%3")
+                          .arg(hours, 2, 10, QChar('0'))
+                          .arg(minutes, 2, 10, QChar('0'))
+                          .arg(seconds, 2, 10, QChar('0'));
 }
 
 MainWindow::~MainWindow() {
     if (currentProcess && currentProcess->state() == QProcess::Running) {
         currentProcess->kill();
+    }
+}
+
+void MainWindow::refreshDropDowns()
+{
+    // Refresh dropdowns
+    model_combo->clear();
+    for (const auto& m : SettingsManager::instance().models) {
+        model_combo->addItem(m.name, QVariant(m.uuid));
+    }
+
+    preset_combo->clear();
+    for (const auto& p : SettingsManager::instance().presets) {
+        preset_combo->addItem(p.name, QVariant(p.uuid));
     }
 }
 
@@ -234,8 +298,14 @@ void MainWindow::openFile() {
             file += ".json";
         }
         currentSavePath = file;
+        
+        // Load settings from file
+        if (SettingsManager::instance().loadSettings(file)) {
+            refreshDropDowns();
+        }
+        
         SettingsManager::instance().addToRecentlyOpened(file);
-        SettingsManager::instance().save();
+        setWindowTitle("qt-sd-animator - " + QFileInfo(file).fileName());
         statusBar()->showMessage("Opened: " + file);
     }
 }
@@ -258,12 +328,14 @@ void MainWindow::saveFile() {
         file.write(QJsonDocument(obj).toJson(QJsonDocument::Indented));
         SettingsManager::instance().addToRecentlyOpened(currentSavePath);
         SettingsManager::instance().save();
+        setWindowTitle("qt-sd-animator - " + QFileInfo(currentSavePath).fileName());
         statusBar()->showMessage("Saved to: " + currentSavePath);
     }
+    SettingsManager::instance().saveSettings(currentSavePath);
 }
 
 void MainWindow::saveAsFile() {
-    QString file = QFileDialog::getSaveFileName(this, "Save Settings As", "", "JSON Files (*.json);;All Files (*)");
+    QString file = QFileDialog::getSaveFileName(this, "Save Settings As", currentSavePath, "JSON Files (*.json);;All Files (*)");
     if (!file.isEmpty()) {
         if (!file.endsWith(".json")) {
             file += ".json";
@@ -275,6 +347,7 @@ void MainWindow::saveAsFile() {
             outFile.write(QJsonDocument(obj).toJson(QJsonDocument::Indented));
             SettingsManager::instance().addToRecentlyOpened(file);
             SettingsManager::instance().save();
+            setWindowTitle("qt-sd-animator - " + QFileInfo(file).fileName());
             statusBar()->showMessage("Saved to: " + file);
         }
     }
@@ -288,6 +361,7 @@ void MainWindow::showGeneralSettings() {
 void MainWindow::showModelManager() {
     ModelManagerDialog dlg(this);
     dlg.exec();
+    refreshDropDowns();
 }
 
 void MainWindow::showPresetManager() {
@@ -305,7 +379,7 @@ void MainWindow::newModel() {
         m.vae = dlg.vae();
         m.width = dlg.width();
         m.height = dlg.height();
-        m.modelBasePath = dlg.modelBasePath();
+        m.sourceImageRequired = dlg.sourceImageRequired();
         m.uuid = dlg.uuid();
         SettingsManager::instance().models << m;
         SettingsManager::instance().save();
@@ -324,6 +398,7 @@ void MainWindow::savePreset() {
     p.name = name;
     p.prompt = prompt_edit->toPlainText();
     p.negativePrompt = negative_prompt_edit->toPlainText();
+    p.seed = seed_edit->text();
     p.uuid = QUuid::createUuid().toString().remove("{").remove("}");
     SettingsManager::instance().presets << p;
     SettingsManager::instance().save();
@@ -334,6 +409,13 @@ void MainWindow::savePreset() {
 }
 
 void MainWindow::processClicked() {
+    int modelIndex = model_combo->currentIndex();
+    if (modelIndex < 0 || modelIndex >= SettingsManager::instance().models.size()) {
+        output_widget->append("[ERROR] No model selected. cannot continue without model settings.");
+        return;
+    }
+    const auto& model = SettingsManager::instance().models[modelIndex];
+
     // Sanity checks
     if (SettingsManager::instance().general.bin_sd_cli.isEmpty()) {
         output_widget->append("[ERROR] SD-CLI binary path not set. Please configure in Settings.");
@@ -343,11 +425,11 @@ void MainWindow::processClicked() {
         output_widget->append("[ERROR] SD-CLI binary not found at: " + SettingsManager::instance().general.bin_sd_cli);
         return;
     }
-    if (source_image_edit->text().isEmpty()) {
+    if (model.sourceImageRequired && source_image_edit->text().isEmpty()) {
         output_widget->append("[ERROR] Source image is required.");
         return;
     }
-    if (!QFileInfo::exists(source_image_edit->text())) {
+    if (model.sourceImageRequired && !QFileInfo::exists(source_image_edit->text())) {
         output_widget->append("[ERROR] Source image not found: " + source_image_edit->text());
         return;
     }
@@ -355,17 +437,26 @@ void MainWindow::processClicked() {
         output_widget->append("[ERROR] Prompt is required.");
         return;
     }
-    if (output_dest_edit->text().isEmpty()) {
-        output_widget->append("[ERROR] Output destination is required.");
-        return;
-    }
+    //if (filename_edit->text().isEmpty()) {
+    //    output_widget->append("[ERROR] Output filename is required.");
+    //    return;
+   // }
 
     // Disable PROCESS button, enable STOP button
     process_btn->setEnabled(false);
     stop_btn->setEnabled(true);
 
+    // Start execution timer
+    execution_timer_elapsed.start();
+    execution_timer->start(1000);
+
     // Create output directory if not exists
-    QString outputDirPath = output_dest_edit->text();
+    QString outputDirPath =  SettingsManager::instance().general.output_path;// filename_edit->text();
+    if (outputDirPath.isEmpty()) {
+        QMessageBox::critical(this, "Error", "Output directory is empty.");
+        return;
+    }
+
     QDir outputDir(outputDirPath);
     if (!outputDir.exists()) {
         if (!QDir().mkpath(outputDirPath)) {
@@ -382,17 +473,18 @@ void MainWindow::processClicked() {
     } else {
         filename = lastOutputFilename;
     }
-    QString userFilename = QInputDialog::getText(this, "Output Filename", "Enter output filename (without extension):", QLineEdit::Normal, filename);
-    if (userFilename.isEmpty()) {
-        return;
+    QString userFilename = filename_edit->text();
+    if (!userFilename.isEmpty()) {
+        filename = userFilename;
     }
     lastOutputFilename = userFilename;
     QString outputPath;
+    QString ext = model.ext;
     if (datetime_checkbox->isChecked()) {
         QString dateTime = QDateTime::currentDateTime().toString("yyyyMMdd_HHmmss");
-        outputPath = outputDirPath + "/" + userFilename + "_" + dateTime + ".avi";
+        outputPath = outputDirPath + "/" + userFilename + "_" + dateTime + ext;
     } else {
-        outputPath = outputDirPath + "/" + userFilename + ".avi";
+        outputPath = outputDirPath + "/" + userFilename + ext;
     }
     lastOutputDest = outputDirPath;
 
@@ -400,27 +492,24 @@ void MainWindow::processClicked() {
     QString binaryPath = SettingsManager::instance().general.bin_sd_cli;
     QStringList args;
 
-    args << "--init-img" << source_image_edit->text();
+    if (!source_image_edit->text().isEmpty())
+        args << "--init-img" << source_image_edit->text();
     args << "--output" << outputPath;
     args << "--prompt" << prompt_edit->toPlainText();
     if (!negative_prompt_edit->toPlainText().isEmpty()) {
         args << "--negative-prompt" << negative_prompt_edit->toPlainText();
     }
- //   args << "--bg-color" << bg_color.name();
-
-    // Add model settings
-    int modelIndex = model_combo->currentIndex();
-    if (modelIndex < 0 || modelIndex >= SettingsManager::instance().models.size()) {
-        output_widget->append("[ERROR] No model selected. Continuing without model settings.");
-        return;
+    if (!seed_edit->text().isEmpty()) {
+        args << "--seed" << seed_edit->text();
     }
-    const auto& model = SettingsManager::instance().models[modelIndex];
+
     args << "--diffusion-model" << model.diffusionModel;
-    args << "--llm" << model.llm;
-    args << "--vae" << model.vae;
+    if (!model.llm.isEmpty())
+        args << "--llm" << model.llm;
+    if (!model.vae.isEmpty())
+        args << "--vae" << model.vae;
     args << "--width" << QString::number(model.width);
     args << "--height" << QString::number(model.height);
-   // args << "--base-path" << m.modelBasePath;
     
     // Parse additional parameters (one per line)
     for (const auto& param : model.additionalParameters) {
@@ -435,15 +524,6 @@ void MainWindow::processClicked() {
             }
         }
     }
-
-    /*
-    args << "--mode" << "vid_gen";
-    args << "--video-frames" << "25" ;
-    args << "--steps" << "12" ;
-    args << "--cfg-scale" << "1.0";
-    args << "--backend" << "te=cpu";
-    args << "--diffusion-fa";
-*/
 
     // Log command
     QString command = binaryPath;
@@ -474,11 +554,16 @@ void MainWindow::processClicked() {
         presetObj["name"] = preset_combo->currentText();
         presetObj["prompt"] = prompt_edit->toPlainText();
         presetObj["negative_prompt"] = negative_prompt_edit->toPlainText();
+        presetObj["seed"] = seed_edit->text();
 
         writeCompanionJson(outputPath, command,  model, presetObj, source_image_edit->text(), bg_color.name(), exitCode);
 
         currentProcess->deleteLater();
         currentProcess = nullptr;
+
+        // Stop execution timer
+        execution_timer->stop();
+        execution_time_label->setText("Execution Time: " + executionTimeStr() + "[stopped]");
 
         // Re-enable PROCESS button, disable STOP button
         process_btn->setEnabled(true);
@@ -493,6 +578,11 @@ void MainWindow::stopClicked() {
         currentProcess->kill();
         output_widget->append("[INFO] Process stopped.");
     }
+    
+    // Stop execution timer
+    execution_timer->stop();
+    execution_time_label->setText("Execution Time: " + executionTimeStr() + "[stopped]");
+    
     process_btn->setEnabled(true);
     stop_btn->setEnabled(false);
 }
@@ -536,7 +626,7 @@ void MainWindow::writeCompanionJson(const QString& outputPath, const QString& co
     modelObj["vae"] = model.vae;
     modelObj["width"] = model.width;
     modelObj["height"] = model.height;
-    modelObj["model_base_path"] = model.modelBasePath;
+    modelObj["source_image_required"] = model.sourceImageRequired;
     json["model"] = modelObj;
     json["preset"] = presetObj;
 

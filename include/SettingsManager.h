@@ -23,7 +23,8 @@ struct ModelSettings {
     QString uuid;
     int width = 512;
     int height = 512;
-    QString modelBasePath;
+    bool sourceImageRequired = true;
+    QString ext = ".avi";
     QStringList additionalParameters;
 };
 
@@ -31,6 +32,7 @@ struct PresetSettings {
     QString name;
     QString prompt;
     QString negativePrompt;
+    QString seed;
     QString uuid;
 };
 
@@ -68,6 +70,10 @@ public:
     void addToRecentlyOpened(const QString& path);
     void loadFromJson(const QJsonObject& obj);
     QJsonObject toJson() const;
+
+    bool loadSettings(const QString &filename);
+    bool saveSettings(const QString &filename);
+
 
 private:
     SettingsManager();

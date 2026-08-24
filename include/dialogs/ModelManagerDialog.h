@@ -13,6 +13,8 @@
 #include <QMessageBox>
 #include <QUuid>
 #include <QTextEdit>
+#include <QCheckBox>
+#include <QPlainTextEdit>
 
 class ModelManagerDialog : public QDialog {
     Q_OBJECT
@@ -41,6 +43,7 @@ private:
     QLineEdit* vae_edit;
     QSpinBox* width_spin;
     QSpinBox* height_spin;
-    QLineEdit* base_path_edit;
-    QTextEdit* parameters_edit;
+    QCheckBox* source_image_required_check;
+    QComboBox* ext_combo;
+    QPlainTextEdit* parameters_edit;
 };

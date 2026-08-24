@@ -1,0 +1,106 @@
+{
+    "bin_sd_cli": "/disks/white/cfrankb/toolkit/animz_workflow/bin/sd-cli",
+    "models": [
+        {
+            "additional_parameters": [
+                "--mode vid_gen",
+                "--video-frames 25",
+                "--steps 12",
+                "--cfg-scale 1.0",
+                "--backend te=cpu",
+                "--diffusion-fa"
+            ],
+            "diffusion-model": "/disks/white/cfrankb/models/minimax/minimax_h3_fl2va_pruned-Q3_K.gguf",
+            "ext": ".avi",
+            "height": 512,
+            "llm": "/disks/white/cfrankb/models/minimax/qwen3vl_32b_minimax_h3-Q2_K_M.gguf",
+            "name": "Minimax H3 (512x512)",
+            "source_image_required": true,
+            "uuid": "3f8ca972-3613-4968-b82f-0201d4c5469d",
+            "vae": "/disks/white/cfrankb/models/minimax/minimax_h3_video_vae_fp16.safetensors",
+            "width": 512
+        },
+        {
+            "additional_parameters": [
+                "--cfg-scale 1.0",
+                "--vae-on-cpu",
+                "--steps 4",
+                "-t 6",
+                "--mmap"
+            ],
+            "diffusion-model": "/disks/white/cfrankb/models/krea2/krea2_turbo-Q4_K_M.gguf",
+            "ext": ".png",
+            "height": 1024,
+            "llm": "/disks/white/cfrankb/models/krea2/Qwen3-VL-4B-Instruct-abliterated-v1.Q4_K_M.gguf",
+            "name": "Krea2 (1024x1024)",
+            "source_image_required": false,
+            "uuid": "f1731f5f-75f7-49f1-8bb9-2729497d7e44",
+            "vae": "/disks/white/cfrankb/models/krea2/vae/qwen_image_vae.safetensors",
+            "width": 1024
+        },
+        {
+            "additional_parameters": [
+                "--cfg-scale 1.0",
+                "--steps 4",
+                "-t 6",
+                "--mmap"
+            ],
+            "diffusion-model": "/disks/white/cfrankb/models/krea2/krea2_turbo-Q4_K_M.gguf",
+            "ext": ".png",
+            "height": 512,
+            "llm": "/disks/white/cfrankb/models/krea2/Qwen3-VL-4B-Instruct-abliterated-v1.Q4_K_M.gguf",
+            "name": "Krea2 (512x512)",
+            "source_image_required": false,
+            "uuid": "901281d6-882e-468c-bdb5-24461fa6f91a",
+            "vae": "/disks/white/cfrankb/models/krea2/vae/qwen_image_vae.safetensors",
+            "width": 512
+        },
+        {
+            "additional_parameters": [
+                "--clip_l /disks/white/cfrankb/models/flux1/clip_l.safetensors",
+                "--t5xxl /disks/white/cfrankb/models/flux1/t5xxl_fp8_e4m3fn.safetensors",
+                "--steps 20",
+                "--cfg-scale 3.5",
+                "--offload-to-cpu",
+                "--sampling-method euler",
+                "--offload-to-cpu"
+            ],
+            "diffusion-model": "/disks/white/cfrankb/models/flux1/flux1-dev-q4_0.gguf",
+            "ext": ".png",
+            "height": 768,
+            "llm": "",
+            "name": "flux1-dev (1376x768)",
+            "source_image_required": false,
+            "uuid": "9b420c1e-4f3e-444f-bcc0-c7387692b444",
+            "vae": "/disks/white/cfrankb/models/flux1/ae.safetensors",
+            "width": 1376
+        },
+        {
+            "additional_parameters": [
+                "--sampling-method res_multistep",
+                "--scheduler simple",
+                "--cfg-scale 1.0",
+                "--steps 8"
+            ],
+            "diffusion-model": "/disks/white/cfrankb/models/z_image/z_image_turbo-Q4_K.gguf",
+            "ext": ".png",
+            "height": 768,
+            "llm": "/disks/white/cfrankb/models/z_image/text_encoder/Qwen3-4B-Instruct-2507-Q4_K_M.gguf",
+            "name": "zimage-turbo (1376x768)",
+            "source_image_required": false,
+            "uuid": "1b1fe6ed-1bc3-44b9-952f-229f78cf35a0",
+            "vae": "/disks/white/cfrankb/models/z_image/vae/ae.safetensors",
+            "width": 1376
+        }
+    ],
+    "output_path": "/home/cfrankb/Documents/out",
+    "presets": [
+        {
+            "name": "logo",
+            "negative_prompt": "gradient background, shadows, lighting, texture, shading, depth, 3D effect, dark edges, vignette, background noise, blurry, photorealistic",
+            "prompt": "A detailed 16-bit pixel art sprite of a scary monster, facing forward directly toward the camera, isolated on a solid cyan background. The creature has a massive, oversized round head with two large, sharp, curved horns sprouting from the top. Its face features tiny, dark, glowing beady eyes with a creepy, unsettling expression and a wide, terrifying open mouth prominently showing rows of razor-sharp, jagged teeth. The entire head is covered in thick, shaggy, tufted patches of wild hair that completely dominates its body. It has disproportionately small, stubby arms and tiny, thin legs sticking out from its messy, hairy silhouette. Clean pixel placement, sharp outlines, vibrant retro color palette, classic horror video game aesthetic.",
+            "seed": "",
+            "uuid": "957d919c-035d-489e-af0d-e586cb3fb644"
+        }
+    ]
+}

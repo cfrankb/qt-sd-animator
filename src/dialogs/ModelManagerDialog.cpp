@@ -111,11 +111,16 @@ ModelManagerDialog::ModelManagerDialog(QWidget* parent)
     width_spin->setRange(64, 2048);
     width_spin->setValue(512);
     form_layout->addRow("Height:", height_spin = new QSpinBox);
-    height_spin->setRange(64, 2048);
+    height_spin->setRange(64, 4096);
     height_spin->setValue(512);
-    form_layout->addRow("Base Path:", base_path_edit = new QLineEdit);
+    form_layout->addRow("Source Image Required:", source_image_required_check = new QCheckBox);
+    source_image_required_check->setChecked(true);
+    
+    form_layout->addRow("Extension:", ext_combo = new QComboBox);
+    ext_combo->addItems({".png", ".avi"});
+    ext_combo->setCurrentText(".avi");
 
-    form_layout->addRow("Additional Parameters:", parameters_edit = new QTextEdit);
+    form_layout->addRow("Additional Parameters:", parameters_edit = new QPlainTextEdit);
     parameters_edit->setPlaceholderText("One argument per line");
     parameters_edit->setMaximumHeight(100);
 
@@ -146,7 +151,8 @@ void ModelManagerDialog::clearForm() {
     vae_edit->clear();
     width_spin->setValue(512);
     height_spin->setValue(512);
-    base_path_edit->clear();
+    source_image_required_check->setChecked(true);
+    ext_combo->setCurrentText(".avi");
     parameters_edit->clear();
 }
 
@@ -159,7 +165,8 @@ void ModelManagerDialog::loadForm(const QString& uuid) {
             vae_edit->setText(m.vae);
             width_spin->setValue(m.width);
             height_spin->setValue(m.height);
-            base_path_edit->setText(m.modelBasePath);
+            source_image_required_check->setChecked(m.sourceImageRequired);
+            ext_combo->setCurrentText(m.ext);
             parameters_edit->setPlainText(m.additionalParameters.join('\n'));
             return;
         }
@@ -193,8 +200,13 @@ void ModelManagerDialog::addModel() {
     m.vae = vae_edit->text();
     m.width = width_spin->value();
     m.height = height_spin->value();
-    m.modelBasePath = base_path_edit->text();
-    m.additionalParameters = parameters_edit->toPlainText().split('\n', Qt::SkipEmptyParts);
+    m.sourceImageRequired = source_image_required_check->isChecked();
+    m.ext = ext_combo->currentText();
+    QStringList params = parameters_edit->toPlainText().split('\n', Qt::SkipEmptyParts);
+    for (int i = 0; i < params.size(); ++i) {
+        params[i] = params[i].trimmed();
+    }
+    m.additionalParameters = params;
     m.uuid = QUuid::createUuid().toString().remove("{").remove("}");
     SettingsManager::instance().models << m;
     SettingsManager::instance().save();
@@ -216,8 +228,13 @@ void ModelManagerDialog::editModel() {
             m.vae = vae_edit->text();
             m.width = width_spin->value();
             m.height = height_spin->value();
-            m.modelBasePath = base_path_edit->text();
-            m.additionalParameters = parameters_edit->toPlainText().split('\n', Qt::SkipEmptyParts);
+            m.sourceImageRequired = source_image_required_check->isChecked();
+            m.ext = ext_combo->currentText();
+            QStringList params = parameters_edit->toPlainText().split('\n', Qt::SkipEmptyParts);
+            for (int i = 0; i < params.size(); ++i) {
+                params[i] = params[i].trimmed();
+            }
+            m.additionalParameters = params;
             SettingsManager::instance().save();
             populateModels();
             return;

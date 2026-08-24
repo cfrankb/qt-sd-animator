@@ -10,6 +10,7 @@
 #include <QPushButton>
 #include <QMessageBox>
 #include <QUuid>
+#include <QCheckBox>
 
 class NewModelDialog : public QDialog {
     Q_OBJECT
@@ -23,7 +24,7 @@ public:
     QString vae() const { return vae_edit->text(); }
     int width() const { return width_spin->value(); }
     int height() const { return height_spin->value(); }
-    QString modelBasePath() const { return base_path_edit->text(); }
+    bool sourceImageRequired() const { return source_image_required_check->isChecked(); }
     QString uuid() const { return QUuid::createUuid().toString().remove("{").remove("}"); }
 
 private:
@@ -33,5 +34,5 @@ private:
     QLineEdit* vae_edit;
     QSpinBox* width_spin;
     QSpinBox* height_spin;
-    QLineEdit* base_path_edit;
+    QCheckBox* source_image_required_check;
 };

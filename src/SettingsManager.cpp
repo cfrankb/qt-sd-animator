@@ -21,14 +21,39 @@ QString SettingsManager::recentFilesPath() const {
     return QStandardPaths::writableLocation(QStandardPaths::ConfigLocation) + "/qt-sd-animator/recently_open.json";
 }
 
+bool SettingsManager::loadSettings(const QString &filename)
+{
+    QFile file(filename);
+    if (file.exists() && file.open(QIODevice::ReadOnly)) {
+        QJsonDocument doc = QJsonDocument::fromJson(file.readAll());
+        if (doc.isObject()) {
+            loadFromJson(doc.object());
+        }
+        return true;
+    }
+    return false;
+}
+
+bool SettingsManager::saveSettings(const QString &filename)
+{
+    QFile file(settingsPath());
+    if (file.open(QIODevice::WriteOnly)) {
+        file.write(QJsonDocument(toJson()).toJson(QJsonDocument::Indented));
+        return true;
+    }
+    return false;
+}
+
+
 void SettingsManager::load() {
+    /*
     QFile file(settingsPath());
     if (file.exists() && file.open(QIODevice::ReadOnly)) {
         QJsonDocument doc = QJsonDocument::fromJson(file.readAll());
         if (doc.isObject()) {
             loadFromJson(doc.object());
         }
-    }
+    }*/
 
     QFile recentFile(recentFilesPath());
     if (recentFile.exists() && recentFile.open(QIODevice::ReadOnly)) {
@@ -44,10 +69,11 @@ void SettingsManager::load() {
 
 void SettingsManager::save() {
     QJsonObject obj = toJson();
+    /*
     QFile file(settingsPath());
     if (file.open(QIODevice::WriteOnly)) {
         file.write(QJsonDocument(obj).toJson(QJsonDocument::Indented));
-    }
+    }*/
 
     QJsonArray arr;
     for (const auto& path : recentlyOpened) {
@@ -82,7 +108,8 @@ void SettingsManager::loadFromJson(const QJsonObject& obj) {
         m.uuid = modelVal.toObject().value("uuid").toString();
         m.width = modelVal.toObject().value("width").toInt(512);
         m.height = modelVal.toObject().value("height").toInt(512);
-        m.modelBasePath = modelVal.toObject().value("model_base_path").toString();
+        m.sourceImageRequired = modelVal.toObject().value("source_image_required").toBool(true);
+        m.ext = modelVal.toObject().value("ext").toString(".avi");
         
         // Handle backward compatibility: parameters may be string or array
         QJsonValue paramsVal = modelVal.toObject().value("additional_parameters");
@@ -105,6 +132,7 @@ void SettingsManager::loadFromJson(const QJsonObject& obj) {
         p.name = presetVal.toObject().value("name").toString();
         p.prompt = presetVal.toObject().value("prompt").toString();
         p.negativePrompt = presetVal.toObject().value("negative_prompt").toString();
+        p.seed = presetVal.toObject().value("seed").toString();
         p.uuid = presetVal.toObject().value("uuid").toString();
         presets << p;
     }
@@ -125,8 +153,15 @@ QJsonObject SettingsManager::toJson() const {
         mObj["uuid"] = m.uuid;
         mObj["width"] = m.width;
         mObj["height"] = m.height;
-        mObj["model_base_path"] = m.modelBasePath;
-        mObj["additional_parameters"] = m.additionalParameters;//.join('\n');
+        mObj["source_image_required"] = m.sourceImageRequired;
+        mObj["ext"] = m.ext;
+        
+        // Save additional_parameters as JSON array
+        QJsonArray paramsArr;
+        for (const auto& param : m.additionalParameters) {
+            paramsArr << param;
+        }
+        mObj["additional_parameters"] = paramsArr;
         modelsArr << mObj;
     }
     obj["models"] = modelsArr;
@@ -137,6 +172,7 @@ QJsonObject SettingsManager::toJson() const {
         pObj["name"] = p.name;
         pObj["prompt"] = p.prompt;
         pObj["negative_prompt"] = p.negativePrompt;
+        pObj["seed"] = p.seed;
         pObj["uuid"] = p.uuid;
         presetsArr << pObj;
     }

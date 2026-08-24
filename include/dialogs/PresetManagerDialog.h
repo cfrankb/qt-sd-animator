@@ -10,6 +10,7 @@
 #include <QLabel>
 #include <QMessageBox>
 #include <QUuid>
+#include <QRandomGenerator>
 
 class PresetManagerDialog : public QDialog {
     Q_OBJECT
@@ -35,4 +36,6 @@ private:
     QLineEdit* name_edit;
     QTextEdit* prompt_edit;
     QTextEdit* negative_prompt_edit;
+    QLineEdit* seed_edit;
+    QPushButton* random_seed_btn;
 };

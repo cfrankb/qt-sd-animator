@@ -60,6 +60,18 @@ PresetManagerDialog::PresetManagerDialog(QWidget* parent)
     negative_prompt_edit->setPlaceholderText("Enter negative prompt...");
     form_layout->addWidget(negative_prompt_edit);
 
+    form_layout->addWidget(new QLabel("Seed:"));
+    auto* seed_layout = new QHBoxLayout;
+    seed_edit = new QLineEdit;
+    seed_edit->setPlaceholderText("Enter seed value...");
+    seed_layout->addWidget(seed_edit);
+    random_seed_btn = new QPushButton("Random");
+    seed_layout->addWidget(random_seed_btn);
+    connect(random_seed_btn, &QPushButton::clicked, this, [this]() {
+        seed_edit->setText(QString::number(QRandomGenerator::global()->generate()));
+    });
+    form_layout->addLayout(seed_layout);
+
     auto* ok_cancel_layout = new QHBoxLayout;
     auto* ok_btn = new QPushButton("OK");
     auto* cancel_btn = new QPushButton("Cancel");
@@ -84,6 +96,7 @@ void PresetManagerDialog::clearForm() {
     name_edit->clear();
     prompt_edit->clear();
     negative_prompt_edit->clear();
+    seed_edit->clear();
 }
 
 void PresetManagerDialog::loadForm(const QString& uuid) {
@@ -92,6 +105,7 @@ void PresetManagerDialog::loadForm(const QString& uuid) {
             name_edit->setText(p.name);
             prompt_edit->setText(p.prompt);
             negative_prompt_edit->setText(p.negativePrompt);
+            seed_edit->setText(p.seed);
             return;
         }
     }
@@ -121,6 +135,7 @@ void PresetManagerDialog::addPreset() {
     p.name = name;
     p.prompt = prompt_edit->toPlainText();
     p.negativePrompt = negative_prompt_edit->toPlainText();
+    p.seed = seed_edit->text();
     p.uuid = QUuid::createUuid().toString().remove("{").remove("}");
     SettingsManager::instance().presets << p;
     SettingsManager::instance().save();
@@ -139,6 +154,7 @@ void PresetManagerDialog::editPreset() {
             p.name = name_edit->text();
             p.prompt = prompt_edit->toPlainText();
             p.negativePrompt = negative_prompt_edit->toPlainText();
+            p.seed = seed_edit->text();
             SettingsManager::instance().save();
             populatePresets();
             return;
