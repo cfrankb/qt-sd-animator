@@ -22,6 +22,7 @@
 #include <QSettings>
 #include <QUuid>
 #include <QInputDialog>
+#include <QStatusBar>
 #include "SettingsManager.h"
 
 class MainWindow : public QMainWindow {
@@ -48,7 +49,7 @@ private slots:
 
 private:
     void buildProcessArgs(QString& binaryPath, QStringList& args);
-    void writeCompanionJson(const QString& outputPath, const QString& command, const ModelSettings& model, const PresetSettings& preset, const QString& sourceImage, const QString& bgColor, int exitCode);
+    void writeCompanionJson(const QString& outputPath, const QString& command, const ModelSettings& model, const QJsonObject &presetObj, const QString& sourceImage, const QString& bgColor, int exitCode);
 
     QComboBox* model_combo;
     QComboBox* preset_combo;

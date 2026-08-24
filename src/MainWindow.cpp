@@ -63,21 +63,23 @@ MainWindow::MainWindow(QWidget* parent)
 
     file_menu->addSeparator();
 
-    auto* exit_act = new QAction("Exit", this);
-    connect(exit_act, &QAction::triggered, this, &QMainWindow::close);
-    file_menu->addAction(exit_act);
+    auto* tool_menu = menuBar()->addMenu("&Tool");
 
     auto* settings_act = new QAction("Settings", this);
     connect(settings_act, &QAction::triggered, this, &MainWindow::showGeneralSettings);
-    file_menu->addAction(settings_act);
+    tool_menu->addAction(settings_act);
 
     auto* model_mgr_act = new QAction("Model Manager", this);
     connect(model_mgr_act, &QAction::triggered, this, &MainWindow::showModelManager);
-    file_menu->addAction(model_mgr_act);
+    tool_menu->addAction(model_mgr_act);
 
     auto* preset_mgr_act = new QAction("Preset Manager", this);
     connect(preset_mgr_act, &QAction::triggered, this, &MainWindow::showPresetManager);
-    file_menu->addAction(preset_mgr_act);
+    tool_menu->addAction(preset_mgr_act);
+
+    auto* exit_act = new QAction("Exit", this);
+    connect(exit_act, &QAction::triggered, this, &QMainWindow::close);
+    file_menu->addAction(exit_act);
 
     // Main workspace
     auto* workspace = new QWidget(this);
@@ -112,13 +114,13 @@ MainWindow::MainWindow(QWidget* parent)
 
     // Background color
     auto* bg_layout = new QHBoxLayout;
-    bg_layout->addWidget(new QLabel("Background Color:"));
+    //bg_layout->addWidget(new QLabel("Background Color:"));
     bg_color_label = new QLabel;
     bg_color_label->setFixedSize(100, 20);
     bg_color_label->setStyleSheet("border: 1px solid black;");
-    bg_layout->addWidget(bg_color_label);
+   // bg_layout->addWidget(bg_color_label);
     auto* color_btn = new QPushButton("Select Color");
-    bg_layout->addWidget(color_btn);
+   // bg_layout->addWidget(color_btn);
     connect(color_btn, &QPushButton::clicked, this, &MainWindow::selectBgColor);
     ws_layout->addLayout(bg_layout);
 
@@ -126,8 +128,9 @@ MainWindow::MainWindow(QWidget* parent)
     auto* src_layout = new QHBoxLayout;
     src_layout->addWidget(new QLabel("Source Image:"));
     source_image_edit = new QLineEdit;
+    source_image_edit->setFixedWidth(400);
     src_layout->addWidget(source_image_edit);
-    auto* browse_btn = new QPushButton("[BUTTON]");
+    auto* browse_btn = new QPushButton("Browse...");
     src_layout->addWidget(browse_btn);
     connect(browse_btn, &QPushButton::clicked, this, &MainWindow::selectSourceImage);
     ws_layout->addLayout(src_layout);
@@ -138,6 +141,7 @@ MainWindow::MainWindow(QWidget* parent)
     prompt_edit = new QPlainTextEdit;
     prompt_edit->setPlaceholderText("Enter prompt...");
     prompt_edit->setMaximumHeight(150);
+    prompt_edit->setFixedWidth(600);
     prompt_edit->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     prompt_edit->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
     prompt_edit->setWordWrapMode(QTextOption::WordWrap);
@@ -150,6 +154,7 @@ MainWindow::MainWindow(QWidget* parent)
     negative_prompt_edit = new QPlainTextEdit;
     negative_prompt_edit->setPlaceholderText("Enter negative prompt...");
     negative_prompt_edit->setMaximumHeight(150);
+    negative_prompt_edit->setFixedWidth(600);
     negative_prompt_edit->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     negative_prompt_edit->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
     negative_prompt_edit->setWordWrapMode(QTextOption::WordWrap);
@@ -161,6 +166,7 @@ MainWindow::MainWindow(QWidget* parent)
     dest_layout->addWidget(new QLabel("Output Destination:"));
     output_dest_edit = new QLineEdit;
     output_dest_edit->setPlaceholderText("/path/to/output");
+    output_dest_edit->setFixedWidth(400);
     dest_layout->addWidget(output_dest_edit);
     auto* browse_dest_btn = new QPushButton("Browse...");
     dest_layout->addWidget(browse_dest_btn);
@@ -209,6 +215,10 @@ MainWindow::MainWindow(QWidget* parent)
     // Load saved settings
     bg_color = Qt::black;
     bg_color_label->setStyleSheet("background-color: " + bg_color.name() + ";");
+
+    // Status bar
+    statusBar()->show();
+    statusBar()->showMessage("Ready");
 }
 
 MainWindow::~MainWindow() {
@@ -226,6 +236,7 @@ void MainWindow::openFile() {
         currentSavePath = file;
         SettingsManager::instance().addToRecentlyOpened(file);
         SettingsManager::instance().save();
+        statusBar()->showMessage("Opened: " + file);
     }
 }
 
@@ -247,6 +258,7 @@ void MainWindow::saveFile() {
         file.write(QJsonDocument(obj).toJson(QJsonDocument::Indented));
         SettingsManager::instance().addToRecentlyOpened(currentSavePath);
         SettingsManager::instance().save();
+        statusBar()->showMessage("Saved to: " + currentSavePath);
     }
 }
 
@@ -263,6 +275,7 @@ void MainWindow::saveAsFile() {
             outFile.write(QJsonDocument(obj).toJson(QJsonDocument::Indented));
             SettingsManager::instance().addToRecentlyOpened(file);
             SettingsManager::instance().save();
+            statusBar()->showMessage("Saved to: " + file);
         }
     }
 }
@@ -398,13 +411,11 @@ void MainWindow::processClicked() {
     args << "--height" << QString::number(model.height);
    // args << "--base-path" << m.modelBasePath;
 
-
     args << "--video-frames" << "25" ;
     args << "--steps" << "12" ;
     args << "--cfg-scale" << "1.0";
     args << "--backend" << "te=cpu";
     args << "--diffusion-fa";
-
 
     // Log command
     QString command = binaryPath;
@@ -431,7 +442,12 @@ void MainWindow::processClicked() {
         output_widget->append("\n[INFO] Process finished with exit code: " + QString::number(exitCode));
 
         // Write companion JSON
-        writeCompanionJson(outputPath, command,  model, /* preset */ {}, source_image_edit->text(), bg_color.name(), exitCode);
+        QJsonObject presetObj;
+        presetObj["name"] = preset_combo->currentText();
+        presetObj["prompt"] = prompt_edit->toPlainText();
+        presetObj["negative_prompt"] = negative_prompt_edit->toPlainText();
+
+        writeCompanionJson(outputPath, command,  model, presetObj, source_image_edit->text(), bg_color.name(), exitCode);
 
         currentProcess->deleteLater();
         currentProcess = nullptr;
@@ -477,11 +493,11 @@ void MainWindow::buildProcessArgs(QString& binaryPath, QStringList& args) {
     args << "--test";
 }
 
-void MainWindow::writeCompanionJson(const QString& outputPath, const QString& command, const ModelSettings& model, const PresetSettings& preset, const QString& sourceImage, const QString& bgColor, int exitCode) {
+void MainWindow::writeCompanionJson(const QString& outputPath, const QString& command, const ModelSettings& model, const QJsonObject &presetObj, const QString& sourceImage, const QString& bgColor, int exitCode) {
     QJsonObject json;
     json["command"] = command;
     json["source_image"] = sourceImage;
-    json["bg_color"] = bgColor;
+ //   json["bg_color"] = bgColor;
     json["timestamp"] = QDateTime::currentDateTime().toString(Qt::ISODate);
     json["exit_code"] = exitCode;
 
@@ -494,11 +510,6 @@ void MainWindow::writeCompanionJson(const QString& outputPath, const QString& co
     modelObj["height"] = model.height;
     modelObj["model_base_path"] = model.modelBasePath;
     json["model"] = modelObj;
-
-    QJsonObject presetObj;
-    presetObj["name"] = preset.name;
-    presetObj["prompt"] = preset.prompt;
-    presetObj["negative_prompt"] = preset.negativePrompt;
     json["preset"] = presetObj;
 
     QFile jsonFile(outputPath + ".json");
