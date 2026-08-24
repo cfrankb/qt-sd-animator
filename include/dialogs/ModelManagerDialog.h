@@ -12,6 +12,7 @@
 #include <QFormLayout>
 #include <QMessageBox>
 #include <QUuid>
+#include <QTextEdit>
 
 class ModelManagerDialog : public QDialog {
     Q_OBJECT
@@ -41,4 +42,5 @@ private:
     QSpinBox* width_spin;
     QSpinBox* height_spin;
     QLineEdit* base_path_edit;
+    QTextEdit* parameters_edit;
 };

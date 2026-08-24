@@ -399,7 +399,7 @@ void MainWindow::processClicked() {
     // Build command arguments
     QString binaryPath = SettingsManager::instance().general.bin_sd_cli;
     QStringList args;
-    args << "--mode" << "vid_gen";
+
     args << "--init-img" << source_image_edit->text();
     args << "--output" << outputPath;
     args << "--prompt" << prompt_edit->toPlainText();
@@ -421,12 +421,29 @@ void MainWindow::processClicked() {
     args << "--width" << QString::number(model.width);
     args << "--height" << QString::number(model.height);
    // args << "--base-path" << m.modelBasePath;
+    
+    // Parse additional parameters (one per line)
+    for (const auto& param : model.additionalParameters) {
+        QString trimmed = param.trimmed();
+        if (!trimmed.isEmpty()) {
+            // Split each line on space character (0x20)
+            QStringList parts = trimmed.split(' ', Qt::SkipEmptyParts);
+            for (const auto& part : parts) {
+                if (!part.isEmpty()) {
+                    args << part;
+                }
+            }
+        }
+    }
 
+    /*
+    args << "--mode" << "vid_gen";
     args << "--video-frames" << "25" ;
     args << "--steps" << "12" ;
     args << "--cfg-scale" << "1.0";
     args << "--backend" << "te=cpu";
     args << "--diffusion-fa";
+*/
 
     // Log command
     QString command = binaryPath;

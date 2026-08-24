@@ -83,6 +83,18 @@ void SettingsManager::loadFromJson(const QJsonObject& obj) {
         m.width = modelVal.toObject().value("width").toInt(512);
         m.height = modelVal.toObject().value("height").toInt(512);
         m.modelBasePath = modelVal.toObject().value("model_base_path").toString();
+        
+        // Handle backward compatibility: parameters may be string or array
+        QJsonValue paramsVal = modelVal.toObject().value("additional_parameters");
+        if (paramsVal.isString()) {
+            QString paramsStr = paramsVal.toString();
+            m.additionalParameters = paramsStr.split('\n', Qt::SkipEmptyParts);
+        } else if (paramsVal.isArray()) {
+            QJsonArray paramsArr = paramsVal.toArray();
+            for (const auto& item : paramsArr) {
+                m.additionalParameters << item.toString();
+            }
+        }
         models << m;
     }
 
@@ -114,6 +126,7 @@ QJsonObject SettingsManager::toJson() const {
         mObj["width"] = m.width;
         mObj["height"] = m.height;
         mObj["model_base_path"] = m.modelBasePath;
+        mObj["additional_parameters"] = m.additionalParameters;//.join('\n');
         modelsArr << mObj;
     }
     obj["models"] = modelsArr;

@@ -115,6 +115,10 @@ ModelManagerDialog::ModelManagerDialog(QWidget* parent)
     height_spin->setValue(512);
     form_layout->addRow("Base Path:", base_path_edit = new QLineEdit);
 
+    form_layout->addRow("Additional Parameters:", parameters_edit = new QTextEdit);
+    parameters_edit->setPlaceholderText("One argument per line");
+    parameters_edit->setMaximumHeight(100);
+
     auto* ok_cancel_layout = new QHBoxLayout;
     auto* ok_btn = new QPushButton("OK");
     auto* cancel_btn = new QPushButton("Cancel");
@@ -143,6 +147,7 @@ void ModelManagerDialog::clearForm() {
     width_spin->setValue(512);
     height_spin->setValue(512);
     base_path_edit->clear();
+    parameters_edit->clear();
 }
 
 void ModelManagerDialog::loadForm(const QString& uuid) {
@@ -155,6 +160,7 @@ void ModelManagerDialog::loadForm(const QString& uuid) {
             width_spin->setValue(m.width);
             height_spin->setValue(m.height);
             base_path_edit->setText(m.modelBasePath);
+            parameters_edit->setPlainText(m.additionalParameters.join('\n'));
             return;
         }
     }
@@ -188,6 +194,7 @@ void ModelManagerDialog::addModel() {
     m.width = width_spin->value();
     m.height = height_spin->value();
     m.modelBasePath = base_path_edit->text();
+    m.additionalParameters = parameters_edit->toPlainText().split('\n', Qt::SkipEmptyParts);
     m.uuid = QUuid::createUuid().toString().remove("{").remove("}");
     SettingsManager::instance().models << m;
     SettingsManager::instance().save();
@@ -210,6 +217,7 @@ void ModelManagerDialog::editModel() {
             m.width = width_spin->value();
             m.height = height_spin->value();
             m.modelBasePath = base_path_edit->text();
+            m.additionalParameters = parameters_edit->toPlainText().split('\n', Qt::SkipEmptyParts);
             SettingsManager::instance().save();
             populateModels();
             return;
