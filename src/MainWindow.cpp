@@ -376,12 +376,23 @@ void MainWindow::processClicked() {
 
     // Build filename
     QString sourceBase = QFileInfo(source_image_edit->text()).completeBaseName();
+    QString filename;
+    if (lastOutputFilename.isEmpty()) {
+        filename = sourceBase;
+    } else {
+        filename = lastOutputFilename;
+    }
+    QString userFilename = QInputDialog::getText(this, "Output Filename", "Enter output filename (without extension):", QLineEdit::Normal, filename);
+    if (userFilename.isEmpty()) {
+        return;
+    }
+    lastOutputFilename = userFilename;
     QString outputPath;
     if (datetime_checkbox->isChecked()) {
         QString dateTime = QDateTime::currentDateTime().toString("yyyyMMdd_HHmmss");
-        outputPath = outputDirPath + "/" + sourceBase + "_" + dateTime + ".avi";
+        outputPath = outputDirPath + "/" + userFilename + "_" + dateTime + ".avi";
     } else {
-        outputPath = outputDirPath + "/" + sourceBase + ".avi";
+        outputPath = outputDirPath + "/" + userFilename + ".avi";
     }
     lastOutputDest = outputDirPath;
 

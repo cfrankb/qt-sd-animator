@@ -66,6 +66,7 @@ private:
 
     QString lastSourcePath;
     QString lastOutputDest;
+    QString lastOutputFilename;
     QString currentSavePath;
     QProcess* currentProcess = nullptr;
 };

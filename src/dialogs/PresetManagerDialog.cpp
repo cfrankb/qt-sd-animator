@@ -18,7 +18,7 @@ PresetManagerDialog::PresetManagerDialog(QWidget* parent)
 
     auto* btn_layout = new QVBoxLayout;
     auto* add_btn = new QPushButton("Add");
-    auto* edit_btn = new QPushButton("Edit");
+    auto* edit_btn = new QPushButton("Save");
     auto* dup_btn = new QPushButton("Duplicate");
     auto* del_btn = new QPushButton("Delete");
     btn_layout->addWidget(add_btn);

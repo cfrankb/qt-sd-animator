@@ -4,6 +4,8 @@
 #include <QFileInfo>
 #include <QDir>
 
+static char fileFilters[] = "All Supported(*.gguf *.safetensors);;GGUF Files (*.gguf);;SafeTensors Files (*.safetensors);;All Files (*)";
+
 NewModelDialog::NewModelDialog(QWidget* parent)
     : QDialog(parent) {
     setWindowTitle("New Model");
@@ -26,7 +28,12 @@ NewModelDialog::NewModelDialog(QWidget* parent)
     diffusion_layout->addWidget(diffusion_btn);
     form_layout->addLayout(diffusion_layout);
     connect(diffusion_btn, &QPushButton::clicked, [this]() {
-        QString file = QFileDialog::getOpenFileName(this, "Select Diffusion Model", "", "GGUF Files (*.gguf);;SafeTensors Files (*.safetensors);;All Files (*)");
+        QString currentPath = diffusion_model_edit->text();
+        QString startDir = QFileInfo(currentPath).absolutePath();
+        if (startDir.isEmpty()) {
+            startDir = QDir::homePath();
+        }
+        QString file = QFileDialog::getOpenFileName(this, "Select Diffusion Model", startDir, fileFilters);
         if (!file.isEmpty()) {
             diffusion_model_edit->setText(file);
         }
@@ -40,7 +47,12 @@ NewModelDialog::NewModelDialog(QWidget* parent)
     llm_layout->addWidget(llm_btn);
     form_layout->addLayout(llm_layout);
     connect(llm_btn, &QPushButton::clicked, [this]() {
-        QString file = QFileDialog::getOpenFileName(this, "Select LLM", "", "GGUF Files (*.gguf);;SafeTensors Files (*.safetensors);;All Files (*)");
+        QString currentPath = llm_edit->text();
+        QString startDir = QFileInfo(currentPath).absolutePath();
+        if (startDir.isEmpty()) {
+            startDir = QDir::homePath();
+        }
+        QString file = QFileDialog::getOpenFileName(this, "Select LLM", startDir, fileFilters);
         if (!file.isEmpty()) {
             llm_edit->setText(file);
         }
@@ -54,7 +66,12 @@ NewModelDialog::NewModelDialog(QWidget* parent)
     vae_layout->addWidget(vae_btn);
     form_layout->addLayout(vae_layout);
     connect(vae_btn, &QPushButton::clicked, [this]() {
-        QString file = QFileDialog::getOpenFileName(this, "Select VAE", "", "GGUF Files (*.gguf);;SafeTensors Files (*.safetensors);;All Files (*)");
+        QString currentPath = vae_edit->text();
+        QString startDir = QFileInfo(currentPath).absolutePath();
+        if (startDir.isEmpty()) {
+            startDir = QDir::homePath();
+        }
+        QString file = QFileDialog::getOpenFileName(this, "Select VAE", startDir, fileFilters);
         if (!file.isEmpty()) {
             vae_edit->setText(file);
         }
