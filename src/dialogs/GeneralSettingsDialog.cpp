@@ -21,26 +21,26 @@ GeneralSettingsDialog::GeneralSettingsDialog(QWidget* parent)
     auto* formLayout = new QFormLayout;
 
     auto* bin_label = new QLabel("SD-CLI Binary Path:");
-    formLayout->addRow(bin_label, bin_sd_cli_edit = new QLineEdit);
-    bin_sd_cli_edit->setText(SettingsManager::instance().general.bin_sd_cli);
-    bin_sd_cli_edit->setPlaceholderText("/path/to/sd-cli");
+    formLayout->addRow(bin_label, m_binSdCliEdit = new QLineEdit);
+    m_binSdCliEdit->setText(SettingsManager::instance().general.bin_sd_cli);
+    m_binSdCliEdit->setPlaceholderText("/path/to/sd-cli");
 
     auto* browse_bin_btn = new QPushButton("Browse...");
     auto* bin_layout = new QHBoxLayout;
-    bin_layout->addWidget(bin_sd_cli_edit);
+    bin_layout->addWidget(m_binSdCliEdit);
     bin_layout->addWidget(browse_bin_btn);
     formLayout->addRow(bin_layout);
 
     connect(browse_bin_btn, &QPushButton::clicked, this, &GeneralSettingsDialog::browseBinary);
 
     auto* output_label = new QLabel("Output Path:");
-    formLayout->addRow(output_label, output_path_edit = new QLineEdit);
-    output_path_edit->setText(SettingsManager::instance().general.output_path);
-    output_path_edit->setPlaceholderText("/path/to/output");
+    formLayout->addRow(output_label, m_outputPathEdit = new QLineEdit);
+    m_outputPathEdit->setText(SettingsManager::instance().general.output_path);
+    m_outputPathEdit->setPlaceholderText("/path/to/output");
 
     auto* browse_output_btn = new QPushButton("Browse...");
     auto* output_layout = new QHBoxLayout;
-    output_layout->addWidget(output_path_edit);
+    output_layout->addWidget(m_outputPathEdit);
     output_layout->addWidget(browse_output_btn);
     formLayout->addRow(output_layout);
 
@@ -62,32 +62,32 @@ GeneralSettingsDialog::GeneralSettingsDialog(QWidget* parent)
 void GeneralSettingsDialog::browseBinary() {
     QString file = QFileDialog::getOpenFileName(this, "Select SD-CLI Binary", "", "All Files (*);;Executable (*.exe)");
     if (!file.isEmpty()) {
-        bin_sd_cli_edit->setText(file);
+        m_binSdCliEdit->setText(file);
     }
 }
 
 void GeneralSettingsDialog::browseOutputPath() {
     QString dir = QFileDialog::getExistingDirectory(this, "Select Output Directory");
     if (!dir.isEmpty()) {
-        output_path_edit->setText(dir);
+        m_outputPathEdit->setText(dir);
     }
 }
 
 void GeneralSettingsDialog::accept() {
-    if (bin_sd_cli_edit->text().isEmpty()) {
+    if (m_binSdCliEdit->text().isEmpty()) {
         QMessageBox::warning(this, "Validation Error", "SD-CLI binary path is required.");
         return;
     }
-    if (!QFileInfo::exists(bin_sd_cli_edit->text())) {
+    if (!QFileInfo::exists(m_binSdCliEdit->text())) {
         QMessageBox::warning(this, "Validation Error", "SD-CLI binary does not exist at the specified path.");
         return;
     }
-    if (output_path_edit->text().isEmpty()) {
+    if (m_outputPathEdit->text().isEmpty()) {
         QMessageBox::warning(this, "Validation Error", "Output path is required.");
         return;
     }
-    SettingsManager::instance().general.bin_sd_cli = bin_sd_cli_edit->text();
-    SettingsManager::instance().general.output_path = output_path_edit->text();
+    SettingsManager::instance().general.bin_sd_cli = m_binSdCliEdit->text();
+    SettingsManager::instance().general.output_path = m_outputPathEdit->text();
     SettingsManager::instance().save();
     QDialog::accept();
 }

@@ -13,8 +13,8 @@ PresetManagerDialog::PresetManagerDialog(QWidget* parent)
     auto* list_layout = new QHBoxLayout;
     mainLayout->addLayout(list_layout);
 
-    presets_list = new QListWidget;
-    list_layout->addWidget(presets_list);
+    m_presetsList = new QListWidget;
+    list_layout->addWidget(m_presetsList);
 
     auto* btn_layout = new QVBoxLayout;
     auto* add_btn = new QPushButton("Add");
@@ -31,13 +31,13 @@ PresetManagerDialog::PresetManagerDialog(QWidget* parent)
     connect(edit_btn, &QPushButton::clicked, this, &PresetManagerDialog::editPreset);
     connect(dup_btn, &QPushButton::clicked, this, &PresetManagerDialog::duplicatePreset);
     connect(del_btn, &QPushButton::clicked, this, &PresetManagerDialog::deletePreset);
-    connect(presets_list, &QListWidget::itemSelectionChanged, this, [this]() {
-        auto items = presets_list->selectedItems();
+    connect(m_presetsList, &QListWidget::itemSelectionChanged, this, [this]() {
+        auto items = m_presetsList->selectedItems();
         if (items.isEmpty()) {
             clearForm();
             return;
         }
-        int row = presets_list->row(items.first());
+        int row = m_presetsList->row(items.first());
         if (row >= 0 && row < SettingsManager::instance().presets.size()) {
             loadForm(SettingsManager::instance().presets[row].uuid);
         }
@@ -47,29 +47,29 @@ PresetManagerDialog::PresetManagerDialog(QWidget* parent)
     mainLayout->addLayout(form_layout);
 
     form_layout->addWidget(new QLabel("Name:"));
-    name_edit = new QLineEdit;
-    form_layout->addWidget(name_edit);
+    m_nameEdit = new QLineEdit;
+    form_layout->addWidget(m_nameEdit);
 
     form_layout->addWidget(new QLabel("Prompt:"));
-    prompt_edit = new QTextEdit;
-    prompt_edit->setPlaceholderText("Enter prompt...");
-    form_layout->addWidget(prompt_edit);
+    m_promptEdit = new QTextEdit;
+    m_promptEdit->setPlaceholderText("Enter prompt...");
+    form_layout->addWidget(m_promptEdit);
 
     form_layout->addWidget(new QLabel("Negative Prompt:"));
-    negative_prompt_edit = new QTextEdit;
-    negative_prompt_edit->setPlaceholderText("Enter negative prompt...");
-    form_layout->addWidget(negative_prompt_edit);
+    m_negativePromptEdit = new QTextEdit;
+    m_negativePromptEdit->setPlaceholderText("Enter negative prompt...");
+    form_layout->addWidget(m_negativePromptEdit);
 
     form_layout->addWidget(new QLabel("Seed:"));
     auto* seed_layout = new QHBoxLayout;
-    seed_edit = new QLineEdit;
-    seed_edit->setPlaceholderText("Enter seed value...");
-    seed_layout->addWidget(seed_edit);
-    random_seed_btn = new QPushButton("Random");
-    random_seed_btn->setToolTip("Random seed");
-    seed_layout->addWidget(random_seed_btn);
-    connect(random_seed_btn, &QPushButton::clicked, this, [this]() {
-        seed_edit->setText(QString::number(QRandomGenerator::global()->generate()));
+    m_seedEdit = new QLineEdit;
+    m_seedEdit->setPlaceholderText("Enter seed value...");
+    seed_layout->addWidget(m_seedEdit);
+    m_randomSeedBtn = new QPushButton("Random");
+    m_randomSeedBtn->setToolTip("Random seed");
+    seed_layout->addWidget(m_randomSeedBtn);
+    connect(m_randomSeedBtn, &QPushButton::clicked, this, [this]() {
+        m_seedEdit->setText(QString::number(QRandomGenerator::global()->generate()));
     });
     form_layout->addLayout(seed_layout);
 
@@ -87,56 +87,56 @@ PresetManagerDialog::PresetManagerDialog(QWidget* parent)
 }
 
 void PresetManagerDialog::populatePresets() {
-    presets_list->clear();
+    m_presetsList->clear();
     for (const auto& p : SettingsManager::instance().presets) {
-        presets_list->addItem(p.name);
+        m_presetsList->addItem(p.name);
     }
 }
 
 void PresetManagerDialog::clearForm() {
-    name_edit->clear();
-    prompt_edit->clear();
-    negative_prompt_edit->clear();
-    seed_edit->clear();
+    m_nameEdit->clear();
+    m_promptEdit->clear();
+    m_negativePromptEdit->clear();
+    m_seedEdit->clear();
 }
 
 void PresetManagerDialog::loadForm(const QString& uuid) {
     for (const auto& p : SettingsManager::instance().presets) {
         if (p.uuid == uuid) {
-            name_edit->setText(p.name);
-            prompt_edit->setText(p.prompt);
-            negative_prompt_edit->setText(p.negativePrompt);
-            seed_edit->setText(p.seed);
+            m_nameEdit->setText(p.name);
+            m_promptEdit->setText(p.prompt);
+            m_negativePromptEdit->setText(p.negativePrompt);
+            m_seedEdit->setText(p.seed);
             return;
         }
     }
 }
 
 QString PresetManagerDialog::selectedPresetUuid() const {
-    auto items = presets_list->selectedItems();
+    auto items = m_presetsList->selectedItems();
     if (items.isEmpty()) return QString();
-    int row = presets_list->row(items.first());
+    int row = m_presetsList->row(items.first());
     if (row < 0 || row >= SettingsManager::instance().presets.size()) return QString();
     return SettingsManager::instance().presets[row].uuid;
 }
 
 QString PresetManagerDialog::selectedPresetName() const {
-    auto items = presets_list->selectedItems();
+    auto items = m_presetsList->selectedItems();
     if (items.isEmpty()) return QString();
     return items.first()->text();
 }
 
 void PresetManagerDialog::addPreset() {
-    QString name = name_edit->text();
+    QString name = m_nameEdit->text();
     if (name.isEmpty()) {
         QMessageBox::warning(this, "Validation Error", "Preset name is required.");
         return;
     }
     PresetSettings p;
     p.name = name;
-    p.prompt = prompt_edit->toPlainText();
-    p.negativePrompt = negative_prompt_edit->toPlainText();
-    p.seed = seed_edit->text();
+    p.prompt = m_promptEdit->toPlainText();
+    p.negativePrompt = m_negativePromptEdit->toPlainText();
+    p.seed = m_seedEdit->text();
     p.uuid = QUuid::createUuid().toString().remove("{").remove("}");
     SettingsManager::instance().presets << p;
     SettingsManager::instance().save();
@@ -152,10 +152,10 @@ void PresetManagerDialog::editPreset() {
     }
     for (auto& p : SettingsManager::instance().presets) {
         if (p.uuid == uuid) {
-            p.name = name_edit->text();
-            p.prompt = prompt_edit->toPlainText();
-            p.negativePrompt = negative_prompt_edit->toPlainText();
-            p.seed = seed_edit->text();
+            p.name = m_nameEdit->text();
+            p.prompt = m_promptEdit->toPlainText();
+            p.negativePrompt = m_negativePromptEdit->toPlainText();
+            p.seed = m_seedEdit->text();
             SettingsManager::instance().save();
             populatePresets();
             return;

@@ -35,16 +35,16 @@ private:
     void saveFormToLocal();
     void loadFormFromLocal(int index);
 
-    QComboBox* model_combo;
-    QList<ModelSettings> localModels;
-    int currentModelIndex = -1;
+    QComboBox* m_modelCombo;
+    QList<ModelSettings> m_localModels;
+    int m_currentModelIndex = -1;
 
-    QLineEdit* name_edit;
-    QLineEdit* diffusion_model_edit;
-    QLineEdit* llm_edit;
-    QLineEdit* vae_edit;
-    QCheckBox* source_image_required_check;
-    QComboBox* ext_combo;
-    QPlainTextEdit* parameters_edit;
-    QPlainTextEdit* notes_edit;
+    QLineEdit* m_nameEdit;
+    QLineEdit* m_diffusionModelEdit;
+    QLineEdit* m_llmEdit;
+    QLineEdit* m_vaeEdit;
+    QCheckBox* m_sourceImageRequiredCheck;
+    QComboBox* m_extCombo;
+    QPlainTextEdit* m_parametersEdit;
+    QPlainTextEdit* m_notesEdit;
 };

@@ -73,22 +73,6 @@
         },
         {
             "additional_parameters": [
-                "--sampling-method res_multistep",
-                "--scheduler simple",
-                "--cfg-scale 1.0",
-                "--steps 8"
-            ],
-            "diffusion-model": "/disks/white/cfrankb/models/z_image/z_image_turbo-Q4_K.gguf",
-            "ext": ".png",
-            "llm": "/disks/white/cfrankb/models/z_image/text_encoder/Qwen3-4B-Instruct-2507-Q4_K_M.gguf",
-            "name": "zimage-turbo",
-            "notes": "",
-            "source_image_required": false,
-            "uuid": "1b1fe6ed-1bc3-44b9-952f-229f78cf35a0",
-            "vae": "/disks/white/cfrankb/models/z_image/vae/ae.safetensors"
-        },
-        {
-            "additional_parameters": [
                 "--clip_l /disks/white/cfrankb/models/flux1/clip_l.safetensors",
                 "--t5xxl /disks/white/cfrankb/models/flux1/t5xxl_fp8_e4m3fn.safetensors",
                 "--steps 20",

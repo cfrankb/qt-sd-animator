@@ -17,9 +17,9 @@ ModelManagerDialog::ModelManagerDialog(QWidget* parent)
 
     // Top row: model selector + buttons
     auto* topLayout = new QHBoxLayout;
-    model_combo = new QComboBox;
+    m_modelCombo = new QComboBox;
     topLayout->addWidget(new QLabel("Model:"));
-    topLayout->addWidget(model_combo);
+    topLayout->addWidget(m_modelCombo);
 
     auto* add_btn = new QPushButton("Add");
     auto* dup_btn = new QPushButton("Duplicate");
@@ -32,70 +32,70 @@ ModelManagerDialog::ModelManagerDialog(QWidget* parent)
     connect(add_btn, &QPushButton::clicked, this, &ModelManagerDialog::addModel);
     connect(dup_btn, &QPushButton::clicked, this, &ModelManagerDialog::duplicateModel);
     connect(del_btn, &QPushButton::clicked, this, &ModelManagerDialog::deleteModel);
-    connect(model_combo, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &ModelManagerDialog::onModelChanged);
+    connect(m_modelCombo, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &ModelManagerDialog::onModelChanged);
 
     // Form
     auto* form_layout = new QFormLayout;
     mainLayout->addLayout(form_layout);
 
-    form_layout->addRow("Name:", name_edit = new QLineEdit);
+    form_layout->addRow("Name:", m_nameEdit = new QLineEdit);
 
     auto* diffusion_layout = new QHBoxLayout;
-    diffusion_model_edit = new QLineEdit;
-    diffusion_layout->addWidget(diffusion_model_edit);
+    m_diffusionModelEdit = new QLineEdit;
+    diffusion_layout->addWidget(m_diffusionModelEdit);
     auto* diffusion_btn = new QPushButton("Browse...");
     diffusion_layout->addWidget(diffusion_btn);
     form_layout->addRow("Diffusion Model:", diffusion_layout);
     connect(diffusion_btn, &QPushButton::clicked, [this]() {
-        QString currentPath = diffusion_model_edit->text();
+        QString currentPath = m_diffusionModelEdit->text();
         QString startDir = QFileInfo(currentPath).absolutePath();
         if (startDir.isEmpty()) startDir = QDir::homePath();
         QString file = QFileDialog::getOpenFileName(this, "Select Diffusion Model", startDir, fileFilters);
-        if (!file.isEmpty()) diffusion_model_edit->setText(file);
+        if (!file.isEmpty()) m_diffusionModelEdit->setText(file);
     });
 
     auto* llm_layout = new QHBoxLayout;
-    llm_edit = new QLineEdit;
-    llm_layout->addWidget(llm_edit);
+    m_llmEdit = new QLineEdit;
+    llm_layout->addWidget(m_llmEdit);
     auto* llm_btn = new QPushButton("Browse...");
     llm_layout->addWidget(llm_btn);
     form_layout->addRow("LLM:", llm_layout);
     connect(llm_btn, &QPushButton::clicked, [this]() {
-        QString currentPath = llm_edit->text();
+        QString currentPath = m_llmEdit->text();
         QString startDir = QFileInfo(currentPath).absolutePath();
         if (startDir.isEmpty()) startDir = QDir::homePath();
         QString file = QFileDialog::getOpenFileName(this, "Select LLM", startDir, fileFilters);
-        if (!file.isEmpty()) llm_edit->setText(file);
+        if (!file.isEmpty()) m_llmEdit->setText(file);
     });
 
     auto* vae_layout = new QHBoxLayout;
-    vae_edit = new QLineEdit;
-    vae_layout->addWidget(vae_edit);
+    m_vaeEdit = new QLineEdit;
+    vae_layout->addWidget(m_vaeEdit);
     auto* vae_btn = new QPushButton("Browse...");
     vae_layout->addWidget(vae_btn);
     form_layout->addRow("VAE:", vae_layout);
     connect(vae_btn, &QPushButton::clicked, [this]() {
-        QString currentPath = vae_edit->text();
+        QString currentPath = m_vaeEdit->text();
         QString startDir = QFileInfo(currentPath).absolutePath();
         if (startDir.isEmpty()) startDir = QDir::homePath();
         QString file = QFileDialog::getOpenFileName(this, "Select VAE", startDir, fileFilters);
-        if (!file.isEmpty()) vae_edit->setText(file);
+        if (!file.isEmpty()) m_vaeEdit->setText(file);
     });
 
-    form_layout->addRow("Source Image Required:", source_image_required_check = new QCheckBox);
-    source_image_required_check->setChecked(true);
+    form_layout->addRow("Source Image Required:", m_sourceImageRequiredCheck = new QCheckBox);
+    m_sourceImageRequiredCheck->setChecked(true);
 
-    form_layout->addRow("Extension:", ext_combo = new QComboBox);
-    ext_combo->addItems({".png", ".avi"});
-    ext_combo->setCurrentText(".avi");
+    form_layout->addRow("Extension:", m_extCombo = new QComboBox);
+    m_extCombo->addItems({".png", ".avi"});
+    m_extCombo->setCurrentText(".avi");
 
-    form_layout->addRow("Additional Parameters:", parameters_edit = new QPlainTextEdit);
-    parameters_edit->setPlaceholderText("One argument per line");
-    parameters_edit->setMaximumHeight(100);
+    form_layout->addRow("Additional Parameters:", m_parametersEdit = new QPlainTextEdit);
+    m_parametersEdit->setPlaceholderText("One argument per line");
+    m_parametersEdit->setMaximumHeight(100);
 
-    form_layout->addRow("Notes:", notes_edit = new QPlainTextEdit);
-    notes_edit->setPlaceholderText("Notes about this model");
-    notes_edit->setMaximumHeight(100);
+    form_layout->addRow("Notes:", m_notesEdit = new QPlainTextEdit);
+    m_notesEdit->setPlaceholderText("Notes about this model");
+    m_notesEdit->setMaximumHeight(100);
 
     // OK / Cancel
     auto* ok_cancel_layout = new QHBoxLayout;
@@ -110,69 +110,69 @@ ModelManagerDialog::ModelManagerDialog(QWidget* parent)
     connect(cancel_btn, &QPushButton::clicked, this, &QDialog::reject);
 
     // Load local copy
-    localModels = SettingsManager::instance().models;
+    m_localModels = SettingsManager::instance().models;
     populateCombo();
-    if (model_combo->count() > 0) {
-        model_combo->setCurrentIndex(0);
-        currentModelIndex = 0;
+    if (m_modelCombo->count() > 0) {
+        m_modelCombo->setCurrentIndex(0);
+        m_currentModelIndex = 0;
         loadFormFromLocal(0);
     } else {
-        currentModelIndex = -1;
+        m_currentModelIndex = -1;
     }
 }
 
 void ModelManagerDialog::populateCombo() {
-    model_combo->blockSignals(true);
-    model_combo->clear();
-    for (const auto& m : localModels) {
-        model_combo->addItem(m.name.isEmpty() ? "(unnamed)" : m.name, m.uuid);
+    m_modelCombo->blockSignals(true);
+    m_modelCombo->clear();
+    for (const auto& m : m_localModels) {
+        m_modelCombo->addItem(m.name.isEmpty() ? "(unnamed)" : m.name, m.uuid);
     }
-    model_combo->blockSignals(false);
+    m_modelCombo->blockSignals(false);
 }
 
 void ModelManagerDialog::onModelChanged(int index) {
-    if (currentModelIndex >= 0 && currentModelIndex < localModels.size()) {
+    if (m_currentModelIndex >= 0 && m_currentModelIndex < m_localModels.size()) {
         saveFormToLocal();
     }
-    currentModelIndex = index;
-    if (index >= 0 && index < localModels.size()) {
+    m_currentModelIndex = index;
+    if (index >= 0 && index < m_localModels.size()) {
         // Update combo text if name changed
-        QString display = localModels[index].name.isEmpty() ? "(unnamed)" : localModels[index].name;
-        if (model_combo->itemText(index) != display) {
-            model_combo->blockSignals(true);
-            model_combo->setItemText(index, display);
-            model_combo->blockSignals(false);
+        QString display = m_localModels[index].name.isEmpty() ? "(unnamed)" : m_localModels[index].name;
+        if (m_modelCombo->itemText(index) != display) {
+            m_modelCombo->blockSignals(true);
+            m_modelCombo->setItemText(index, display);
+            m_modelCombo->blockSignals(false);
         }
         loadFormFromLocal(index);
     }
 }
 
 void ModelManagerDialog::saveFormToLocal() {
-    if (currentModelIndex < 0 || currentModelIndex >= localModels.size()) return;
-    ModelSettings &m = localModels[currentModelIndex];
-    m.name = name_edit->text();
-    m.diffusionModel = diffusion_model_edit->text();
-    m.llm = llm_edit->text();
-    m.vae = vae_edit->text();
-    m.sourceImageRequired = source_image_required_check->isChecked();
-    m.ext = ext_combo->currentText();
-    QStringList params = parameters_edit->toPlainText().split('\n', Qt::SkipEmptyParts);
+    if (m_currentModelIndex < 0 || m_currentModelIndex >= m_localModels.size()) return;
+    ModelSettings &m = m_localModels[m_currentModelIndex];
+    m.name = m_nameEdit->text();
+    m.diffusionModel = m_diffusionModelEdit->text();
+    m.llm = m_llmEdit->text();
+    m.vae = m_vaeEdit->text();
+    m.sourceImageRequired = m_sourceImageRequiredCheck->isChecked();
+    m.ext = m_extCombo->currentText();
+    QStringList params = m_parametersEdit->toPlainText().split('\n', Qt::SkipEmptyParts);
     for (int i = 0; i < params.size(); ++i) params[i] = params[i].trimmed();
     m.additionalParameters = params;
-    m.notes = notes_edit->toPlainText();
+    m.notes = m_notesEdit->toPlainText();
 }
 
 void ModelManagerDialog::loadFormFromLocal(int index) {
-    if (index < 0 || index >= localModels.size()) return;
-    const ModelSettings &m = localModels[index];
-    name_edit->setText(m.name);
-    diffusion_model_edit->setText(m.diffusionModel);
-    llm_edit->setText(m.llm);
-    vae_edit->setText(m.vae);
-    source_image_required_check->setChecked(m.sourceImageRequired);
-    ext_combo->setCurrentText(m.ext);
-    parameters_edit->setPlainText(m.additionalParameters.join('\n'));
-    notes_edit->setPlainText(m.notes);
+    if (index < 0 || index >= m_localModels.size()) return;
+    const ModelSettings &m = m_localModels[index];
+    m_nameEdit->setText(m.name);
+    m_diffusionModelEdit->setText(m.diffusionModel);
+    m_llmEdit->setText(m.llm);
+    m_vaeEdit->setText(m.vae);
+    m_sourceImageRequiredCheck->setChecked(m.sourceImageRequired);
+    m_extCombo->setCurrentText(m.ext);
+    m_parametersEdit->setPlainText(m.additionalParameters.join('\n'));
+    m_notesEdit->setPlainText(m.notes);
 }
 
 void ModelManagerDialog::addModel() {
@@ -181,73 +181,73 @@ void ModelManagerDialog::addModel() {
     m.uuid = QUuid::createUuid().toString().remove("{").remove("}");
     m.sourceImageRequired = true;
     m.ext = ".avi";
-    localModels.append(m);
+    m_localModels.append(m);
     populateCombo();
-    int idx = localModels.size() - 1;
-    model_combo->setCurrentIndex(idx);
-    currentModelIndex = idx;
+    int idx = m_localModels.size() - 1;
+    m_modelCombo->setCurrentIndex(idx);
+    m_currentModelIndex = idx;
     loadFormFromLocal(idx);
 }
 
 void ModelManagerDialog::duplicateModel() {
-    if (currentModelIndex < 0 || currentModelIndex >= localModels.size()) {
+    if (m_currentModelIndex < 0 || m_currentModelIndex >= m_localModels.size()) {
         QMessageBox::warning(this, "Validation Error", "Select a model to duplicate.");
         return;
     }
-    ModelSettings new_m = localModels[currentModelIndex];
+    ModelSettings new_m = m_localModels[m_currentModelIndex];
     new_m.name = new_m.name + " (copy)";
     new_m.uuid = QUuid::createUuid().toString().remove("{").remove("}");
-    localModels.append(new_m);
+    m_localModels.append(new_m);
     populateCombo();
-    int idx = localModels.size() - 1;
-    model_combo->setCurrentIndex(idx);
-    currentModelIndex = idx;
+    int idx = m_localModels.size() - 1;
+    m_modelCombo->setCurrentIndex(idx);
+    m_currentModelIndex = idx;
     loadFormFromLocal(idx);
 }
 
 void ModelManagerDialog::deleteModel() {
-    if (currentModelIndex < 0 || currentModelIndex >= localModels.size()) {
+    if (m_currentModelIndex < 0 || m_currentModelIndex >= m_localModels.size()) {
         QMessageBox::warning(this, "Validation Error", "Select a model to delete.");
         return;
     }
-    localModels.removeAt(currentModelIndex);
+    m_localModels.removeAt(m_currentModelIndex);
     populateCombo();
-    if (localModels.isEmpty()) {
-        currentModelIndex = -1;
-        name_edit->clear();
-        diffusion_model_edit->clear();
-        llm_edit->clear();
-        vae_edit->clear();
-        source_image_required_check->setChecked(true);
-        ext_combo->setCurrentText(".avi");
-        parameters_edit->clear();
-        notes_edit->clear();
+    if (m_localModels.isEmpty()) {
+        m_currentModelIndex = -1;
+        m_nameEdit->clear();
+        m_diffusionModelEdit->clear();
+        m_llmEdit->clear();
+        m_vaeEdit->clear();
+        m_sourceImageRequiredCheck->setChecked(true);
+        m_extCombo->setCurrentText(".avi");
+        m_parametersEdit->clear();
+        m_notesEdit->clear();
         return;
     }
-    if (currentModelIndex >= localModels.size()) {
-        currentModelIndex = localModels.size() - 1;
+    if (m_currentModelIndex >= m_localModels.size()) {
+        m_currentModelIndex = m_localModels.size() - 1;
     }
-    model_combo->setCurrentIndex(currentModelIndex);
-    loadFormFromLocal(currentModelIndex);
+    m_modelCombo->setCurrentIndex(m_currentModelIndex);
+    loadFormFromLocal(m_currentModelIndex);
 }
 
 void ModelManagerDialog::acceptDialog() {
-    if (currentModelIndex >= 0) {
+    if (m_currentModelIndex >= 0) {
         saveFormToLocal();
     }
-    SettingsManager::instance().models = localModels;
+    SettingsManager::instance().models = m_localModels;
     SettingsManager::instance().save();
     accept();
 }
 
 QString ModelManagerDialog::selectedModelUuid() const {
-    if (currentModelIndex >= 0 && currentModelIndex < localModels.size())
-        return localModels[currentModelIndex].uuid;
+    if (m_currentModelIndex >= 0 && m_currentModelIndex < m_localModels.size())
+        return m_localModels[m_currentModelIndex].uuid;
     return QString();
 }
 
 QString ModelManagerDialog::selectedModelName() const {
-    if (currentModelIndex >= 0 && currentModelIndex < localModels.size())
-        return localModels[currentModelIndex].name;
+    if (m_currentModelIndex >= 0 && m_currentModelIndex < m_localModels.size())
+        return m_localModels[m_currentModelIndex].name;
     return QString();
 }

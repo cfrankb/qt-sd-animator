@@ -32,10 +32,10 @@ private:
     void clearForm();
     void loadForm(const QString& uuid);
 
-    QListWidget* presets_list;
-    QLineEdit* name_edit;
-    QTextEdit* prompt_edit;
-    QTextEdit* negative_prompt_edit;
-    QLineEdit* seed_edit;
-    QPushButton* random_seed_btn;
+    QListWidget* m_presetsList;
+    QLineEdit* m_nameEdit;
+    QTextEdit* m_promptEdit;
+    QTextEdit* m_negativePromptEdit;
+    QLineEdit* m_seedEdit;
+    QPushButton* m_randomSeedBtn;
 };

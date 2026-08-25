@@ -18,21 +18,21 @@ class NewModelDialog : public QDialog {
 public:
     explicit NewModelDialog(QWidget* parent = nullptr);
 
-    QString modelName() const { return name_edit->text(); }
-    QString diffusionModel() const { return diffusion_model_edit->text(); }
-    QString llm() const { return llm_edit->text(); }
-    QString vae() const { return vae_edit->text(); }
-    int width() const { return width_spin->value(); }
-    int height() const { return height_spin->value(); }
-    bool sourceImageRequired() const { return source_image_required_check->isChecked(); }
+    QString modelName() const { return m_nameEdit->text(); }
+    QString diffusionModel() const { return m_diffusionModelEdit->text(); }
+    QString llm() const { return m_llmEdit->text(); }
+    QString vae() const { return m_vaeEdit->text(); }
+    int width() const { return m_widthSpin->value(); }
+    int height() const { return m_heightSpin->value(); }
+    bool sourceImageRequired() const { return m_sourceImageRequiredCheck->isChecked(); }
     QString uuid() const { return QUuid::createUuid().toString().remove("{").remove("}"); }
 
 private:
-    QLineEdit* name_edit;
-    QLineEdit* diffusion_model_edit;
-    QLineEdit* llm_edit;
-    QLineEdit* vae_edit;
-    QSpinBox* width_spin;
-    QSpinBox* height_spin;
-    QCheckBox* source_image_required_check;
+    QLineEdit* m_nameEdit;
+    QLineEdit* m_diffusionModelEdit;
+    QLineEdit* m_llmEdit;
+    QLineEdit* m_vaeEdit;
+    QSpinBox* m_widthSpin;
+    QSpinBox* m_heightSpin;
+    QCheckBox* m_sourceImageRequiredCheck;
 };

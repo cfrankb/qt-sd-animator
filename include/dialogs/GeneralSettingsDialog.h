@@ -19,8 +19,8 @@ class GeneralSettingsDialog : public QDialog {
 public:
     explicit GeneralSettingsDialog(QWidget* parent = nullptr);
 
-    QString bin_sd_cli() const { return bin_sd_cli_edit->text(); }
-    QString outputPath() const { return output_path_edit->text(); }
+    QString bin_sd_cli() const { return m_binSdCliEdit->text(); }
+    QString outputPath() const { return m_outputPathEdit->text(); }
 
 private slots:
     void browseBinary();
@@ -28,6 +28,6 @@ private slots:
     void accept();
 
 private:
-    QLineEdit* bin_sd_cli_edit;
-    QLineEdit* output_path_edit;
+    QLineEdit* m_binSdCliEdit;
+    QLineEdit* m_outputPathEdit;
 };
