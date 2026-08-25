@@ -12,13 +12,12 @@
             ],
             "diffusion-model": "/disks/white/cfrankb/models/minimax/minimax_h3_fl2va_pruned-Q3_K.gguf",
             "ext": ".avi",
-            "height": 512,
             "llm": "/disks/white/cfrankb/models/minimax/qwen3vl_32b_minimax_h3-Q2_K_M.gguf",
-            "name": "Minimax H3 (512x512)",
+            "name": "Minimax H3",
+            "notes": "",
             "source_image_required": true,
             "uuid": "3f8ca972-3613-4968-b82f-0201d4c5469d",
-            "vae": "/disks/white/cfrankb/models/minimax/minimax_h3_video_vae_fp16.safetensors",
-            "width": 512
+            "vae": "/disks/white/cfrankb/models/minimax/minimax_h3_video_vae_fp16.safetensors"
         },
         {
             "additional_parameters": [
@@ -30,13 +29,12 @@
             ],
             "diffusion-model": "/disks/white/cfrankb/models/krea2/krea2_turbo-Q4_K_M.gguf",
             "ext": ".png",
-            "height": 1024,
             "llm": "/disks/white/cfrankb/models/krea2/Qwen3-VL-4B-Instruct-abliterated-v1.Q4_K_M.gguf",
-            "name": "Krea2 (1024x1024)",
+            "name": "Krea2",
+            "notes": "",
             "source_image_required": false,
             "uuid": "f1731f5f-75f7-49f1-8bb9-2729497d7e44",
-            "vae": "/disks/white/cfrankb/models/krea2/vae/qwen_image_vae.safetensors",
-            "width": 1024
+            "vae": "/disks/white/cfrankb/models/krea2/vae/qwen_image_vae.safetensors"
         },
         {
             "additional_parameters": [
@@ -47,13 +45,12 @@
             ],
             "diffusion-model": "/disks/white/cfrankb/models/krea2/krea2_turbo-Q4_K_M.gguf",
             "ext": ".png",
-            "height": 512,
             "llm": "/disks/white/cfrankb/models/krea2/Qwen3-VL-4B-Instruct-abliterated-v1.Q4_K_M.gguf",
-            "name": "Krea2 (512x512)",
+            "name": "Krea2 Small",
+            "notes": "",
             "source_image_required": false,
             "uuid": "901281d6-882e-468c-bdb5-24461fa6f91a",
-            "vae": "/disks/white/cfrankb/models/krea2/vae/qwen_image_vae.safetensors",
-            "width": 512
+            "vae": "/disks/white/cfrankb/models/krea2/vae/qwen_image_vae.safetensors"
         },
         {
             "additional_parameters": [
@@ -67,13 +64,12 @@
             ],
             "diffusion-model": "/disks/white/cfrankb/models/flux1/flux1-dev-q4_0.gguf",
             "ext": ".png",
-            "height": 768,
             "llm": "",
-            "name": "flux1-dev (1376x768)",
+            "name": "flux1-dev",
+            "notes": "",
             "source_image_required": false,
             "uuid": "9b420c1e-4f3e-444f-bcc0-c7387692b444",
-            "vae": "/disks/white/cfrankb/models/flux1/ae.safetensors",
-            "width": 1376
+            "vae": "/disks/white/cfrankb/models/flux1/ae.safetensors"
         },
         {
             "additional_parameters": [
@@ -84,13 +80,66 @@
             ],
             "diffusion-model": "/disks/white/cfrankb/models/z_image/z_image_turbo-Q4_K.gguf",
             "ext": ".png",
-            "height": 768,
             "llm": "/disks/white/cfrankb/models/z_image/text_encoder/Qwen3-4B-Instruct-2507-Q4_K_M.gguf",
-            "name": "zimage-turbo (1376x768)",
+            "name": "zimage-turbo",
+            "notes": "",
             "source_image_required": false,
             "uuid": "1b1fe6ed-1bc3-44b9-952f-229f78cf35a0",
-            "vae": "/disks/white/cfrankb/models/z_image/vae/ae.safetensors",
-            "width": 1376
+            "vae": "/disks/white/cfrankb/models/z_image/vae/ae.safetensors"
+        },
+        {
+            "additional_parameters": [
+                "--clip_l /disks/white/cfrankb/models/flux1/clip_l.safetensors",
+                "--t5xxl /disks/white/cfrankb/models/flux1/t5xxl_fp8_e4m3fn.safetensors",
+                "--steps 20",
+                "--cfg-scale 3.5",
+                "--offload-to-cpu",
+                "--sampling-method euler",
+                "--offload-to-cpu"
+            ],
+            "diffusion-model": "/disks/white/cfrankb/models/flux1/flux1-schnell-q4_0.gguf",
+            "ext": ".png",
+            "llm": "",
+            "name": "flux1-schnell ",
+            "notes": "",
+            "source_image_required": false,
+            "uuid": "2b793a8a-f4f3-4d42-b537-2d168f0b4830",
+            "vae": "/disks/white/cfrankb/models/flux1/ae.safetensors"
+        },
+        {
+            "additional_parameters": [
+                "--sampling-method res_multistep",
+                "--scheduler simple",
+                "--cfg-scale 1.0",
+                "--steps 8"
+            ],
+            "diffusion-model": "/disks/white/cfrankb/models/z_image/z_image_turbo-Q4_K.gguf",
+            "ext": ".png",
+            "llm": "/disks/white/cfrankb/models/z_image/text_encoder/Qwen3-4B-Instruct-2507-Q4_K_M.gguf",
+            "name": "zimage-turbo",
+            "notes": "",
+            "source_image_required": false,
+            "uuid": "1e1887dc-b916-4f19-a048-bf189eec9a6d",
+            "vae": "/disks/white/cfrankb/models/z_image/vae/ae.safetensors"
+        },
+        {
+            "additional_parameters": [
+                "--cfg-scale 2.5",
+                "--flow-shift 3",
+                "--scheduler simple",
+                "--sampling-method res_multistep",
+                "--steps 20",
+                "--diffusion-fa",
+                "--offload-to-cpu"
+            ],
+            "diffusion-model": "/disks/white/cfrankb/models/qwen_image_edit/qwen-image-2512-Q3_K_M.gguf",
+            "ext": ".png",
+            "llm": "/disks/white/cfrankb/models/qwen_image_edit/Qwen2.5-VL-7B-Instruct-IQ4_XS.gguf",
+            "name": "Qwen-Image-Edit",
+            "notes": "--sampling-method euler\n--cfg-scale 1.0\n\n--offload-to-cpu",
+            "source_image_required": true,
+            "uuid": "2fe3a807-003c-4e00-83f5-d88b1465c1a2",
+            "vae": "/disks/white/cfrankb/models/qwen_image_edit/split_files/vae/qwen_image_vae.safetensors"
         }
     ],
     "output_path": "/home/cfrankb/Documents/out",

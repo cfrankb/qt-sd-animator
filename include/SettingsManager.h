@@ -21,11 +21,10 @@ struct ModelSettings {
     QString llm;
     QString vae;
     QString uuid;
-    int width = 512;
-    int height = 512;
     bool sourceImageRequired = true;
     QString ext = ".avi";
     QStringList additionalParameters;
+    QString notes;
 };
 
 struct PresetSettings {

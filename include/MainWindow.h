@@ -56,7 +56,8 @@ private:
     void refreshDropDowns();
 
     QComboBox* model_combo;
-    QComboBox* preset_combo;
+ //   QComboBox* preset_combo;
+    QComboBox* size_combo;
     QLineEdit* source_image_edit;
     QPlainTextEdit* prompt_edit;
     QPlainTextEdit* negative_prompt_edit;
@@ -67,7 +68,7 @@ private:
     QPushButton* process_btn;
     QPushButton* stop_btn;
     QLabel* bg_color_label;
-    //QLineEdit* output_dest_edit;
+    QLineEdit* output_dest_edit;
     QLineEdit* filename_edit;
     QCheckBox* datetime_checkbox;
     QColor bg_color;

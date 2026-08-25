@@ -27,6 +27,21 @@
 #include <QColorDialog>
 #include <QIcon>
 
+
+struct PixelSize {
+    int w;
+    int h;
+    QString s;
+};
+
+PixelSize sizes[] = {
+    {512, 512, "1:1 512x512 (small)"},
+    {848, 1264, "2:3 848x1264"},
+    {1024, 1024, "1:1 1024x1024"},
+    {1024, 768, "4:3 1024x768"},
+    {1376, 768, "16:9 1376x768"},
+};
+
 MainWindow::MainWindow(QWidget* parent)
     : QMainWindow(parent) {
     setWindowTitle("qt-sd-animator");
@@ -79,9 +94,9 @@ MainWindow::MainWindow(QWidget* parent)
     connect(model_mgr_act, &QAction::triggered, this, &MainWindow::showModelManager);
     tool_menu->addAction(model_mgr_act);
 
-    auto* preset_mgr_act = new QAction("Preset Manager", this);
+    /*auto* preset_mgr_act = new QAction("Preset Manager", this);
     connect(preset_mgr_act, &QAction::triggered, this, &MainWindow::showPresetManager);
-    tool_menu->addAction(preset_mgr_act);
+    tool_menu->addAction(preset_mgr_act);*/
 
     auto* exit_act = new QAction("Exit", this);
     connect(exit_act, &QAction::triggered, this, &QMainWindow::close);
@@ -104,10 +119,24 @@ MainWindow::MainWindow(QWidget* parent)
     auto* new_model_btn = new QPushButton("NEW MODEL");
     model_layout->addWidget(new_model_btn);
     connect(new_model_btn, &QPushButton::clicked, this, &MainWindow::newModel);
-*/
+    */
     ws_layout->addLayout(model_layout);
 
+    // Size selector
+    auto* size_layout = new QHBoxLayout;
+    size_layout->addWidget(new QLabel("Size:"));
+    size_combo = new QComboBox;
+    size_combo->addItem("1:1 512x512 (small)", "512,512");
+    size_combo->addItem("2:3 848x1264", "848,1264");
+    size_combo->addItem("1:1 1024x1024", "1024,1024");
+    size_combo->addItem("4:3 1024x768", "1024,768");
+    size_combo->addItem("16:9 1376x768", "1376,768");
+    size_combo->setCurrentIndex(0);
+    size_layout->addWidget(size_combo);
+    ws_layout->addLayout(size_layout);
+
     // Preset selector
+    /*
     auto* preset_layout = new QHBoxLayout;
     preset_layout->addWidget(new QLabel("Preset:"));
     preset_combo = new QComboBox;
@@ -118,7 +147,7 @@ MainWindow::MainWindow(QWidget* parent)
     auto* save_preset_btn = new QPushButton("SAVE");
     preset_layout->addWidget(save_preset_btn);
     connect(save_preset_btn, &QPushButton::clicked, this, &MainWindow::savePreset);
-    ws_layout->addLayout(preset_layout);
+    ws_layout->addLayout(preset_layout);*/
 
     // Background color
     auto* bg_layout = new QHBoxLayout;
@@ -177,6 +206,7 @@ MainWindow::MainWindow(QWidget* parent)
     seed_edit->setFixedWidth(200);
     seed_layout->addWidget(seed_edit);
     random_seed_btn = new QPushButton("Random");
+    random_seed_btn->setToolTip("Random seed");
     seed_layout->addWidget(random_seed_btn);
     connect(random_seed_btn, &QPushButton::clicked, this, [this]() {
         seed_edit->setText(QString::number(QRandomGenerator::global()->generate()));
@@ -233,13 +263,14 @@ MainWindow::MainWindow(QWidget* parent)
     mainLayout->addWidget(execution_time_label);
 
     // Connect preset selection to populate prompt fields
+    /*
     connect(preset_combo, QOverload<int>::of(&QComboBox::currentIndexChanged), [this](int index) {
         if (index < 0 || index >= SettingsManager::instance().presets.size()) return;
         const auto& p = SettingsManager::instance().presets[index];
         prompt_edit->setPlainText(p.prompt);
         negative_prompt_edit->setPlainText(p.negativePrompt);
         seed_edit->setText(p.seed);
-    });
+    });*/
 
     // Load saved settings
     bg_color = Qt::black;
@@ -285,10 +316,11 @@ void MainWindow::refreshDropDowns()
         model_combo->addItem(m.name, QVariant(m.uuid));
     }
 
+    /*
     preset_combo->clear();
     for (const auto& p : SettingsManager::instance().presets) {
         preset_combo->addItem(p.name, QVariant(p.uuid));
-    }
+    }*/
 }
 
 void MainWindow::openFile() {
@@ -377,8 +409,8 @@ void MainWindow::newModel() {
         m.diffusionModel = dlg.diffusionModel();
         m.llm = dlg.llm();
         m.vae = dlg.vae();
-        m.width = dlg.width();
-        m.height = dlg.height();
+    //    m.width = dlg.width();
+     //   m.height = dlg.height();
         m.sourceImageRequired = dlg.sourceImageRequired();
         m.uuid = dlg.uuid();
         SettingsManager::instance().models << m;
@@ -402,10 +434,10 @@ void MainWindow::savePreset() {
     p.uuid = QUuid::createUuid().toString().remove("{").remove("}");
     SettingsManager::instance().presets << p;
     SettingsManager::instance().save();
-    preset_combo->clear();
-    for (const auto& pr : SettingsManager::instance().presets) {
-        preset_combo->addItem(pr.name, QVariant(pr.uuid));
-    }
+    //preset_combo->clear();
+   // for (const auto& pr : SettingsManager::instance().presets) {
+      //  preset_combo->addItem(pr.name, QVariant(pr.uuid));
+    //}
 }
 
 void MainWindow::processClicked() {
@@ -477,6 +509,9 @@ void MainWindow::processClicked() {
     if (!userFilename.isEmpty()) {
         filename = userFilename;
     }
+    if (userFilename.isEmpty()) {
+        userFilename = "test";
+    }
     lastOutputFilename = userFilename;
     QString outputPath;
     QString ext = model.ext;
@@ -508,8 +543,15 @@ void MainWindow::processClicked() {
         args << "--llm" << model.llm;
     if (!model.vae.isEmpty())
         args << "--vae" << model.vae;
-    args << "--width" << QString::number(model.width);
-    args << "--height" << QString::number(model.height);
+    QStringList sizeParts = size_combo->currentData().toString().split(',');
+    int width = 512;
+    int height = 512;
+    if (sizeParts.size() == 2) {
+        width = sizeParts[0].toInt();
+        height = sizeParts[1].toInt();
+    }
+    args << "--width" << QString::number(width);
+    args << "--height" << QString::number(height);
     
     // Parse additional parameters (one per line)
     for (const auto& param : model.additionalParameters) {
@@ -551,11 +593,19 @@ void MainWindow::processClicked() {
 
         // Write companion JSON
         QJsonObject presetObj;
-        presetObj["name"] = preset_combo->currentText();
+     //   presetObj["name"] = preset_combo->currentText();
         presetObj["prompt"] = prompt_edit->toPlainText();
         presetObj["negative_prompt"] = negative_prompt_edit->toPlainText();
         presetObj["seed"] = seed_edit->text();
-
+        QStringList sizeParts = size_combo->currentData().toString().split(',');
+        int width = 0;
+        int height = 0;
+        if (sizeParts.size() == 2) {
+            width = sizeParts[0].toInt();
+            height = sizeParts[1].toInt();
+        }
+        presetObj["width"] = QString::number(width);
+        presetObj["height"] = QString::number(height);
         writeCompanionJson(outputPath, command,  model, presetObj, source_image_edit->text(), bg_color.name(), exitCode);
 
         currentProcess->deleteLater();
@@ -624,11 +674,12 @@ void MainWindow::writeCompanionJson(const QString& outputPath, const QString& co
     modelObj["diffusion-model"] = model.diffusionModel;
     modelObj["llm"] = model.llm;
     modelObj["vae"] = model.vae;
-    modelObj["width"] = model.width;
-    modelObj["height"] = model.height;
+  //  modelObj["width"] = model.width;
+  //  modelObj["height"] = model.height;
     modelObj["source_image_required"] = model.sourceImageRequired;
     json["model"] = modelObj;
     json["preset"] = presetObj;
+    json["execution_time"] = executionTimeStr();
 
     QFile jsonFile(outputPath + ".json");
     if (jsonFile.open(QIODevice::WriteOnly)) {

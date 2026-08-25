@@ -66,6 +66,7 @@ PresetManagerDialog::PresetManagerDialog(QWidget* parent)
     seed_edit->setPlaceholderText("Enter seed value...");
     seed_layout->addWidget(seed_edit);
     random_seed_btn = new QPushButton("Random");
+    random_seed_btn->setToolTip("Random seed");
     seed_layout->addWidget(random_seed_btn);
     connect(random_seed_btn, &QPushButton::clicked, this, [this]() {
         seed_edit->setText(QString::number(QRandomGenerator::global()->generate()));

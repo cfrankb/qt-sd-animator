@@ -107,12 +107,12 @@ ModelManagerDialog::ModelManagerDialog(QWidget* parent)
         }
     });
 
-    form_layout->addRow("Width:", width_spin = new QSpinBox);
-    width_spin->setRange(64, 2048);
-    width_spin->setValue(512);
-    form_layout->addRow("Height:", height_spin = new QSpinBox);
-    height_spin->setRange(64, 4096);
-    height_spin->setValue(512);
+    //form_layout->addRow("Width:", width_spin = new QSpinBox);
+   // width_spin->setRange(64, 2048);
+  //  width_spin->setValue(512);
+   // form_layout->addRow("Height:", height_spin = new QSpinBox);
+  //  height_spin->setRange(64, 4096);
+  //  height_spin->setValue(512);
     form_layout->addRow("Source Image Required:", source_image_required_check = new QCheckBox);
     source_image_required_check->setChecked(true);
     
@@ -123,6 +123,10 @@ ModelManagerDialog::ModelManagerDialog(QWidget* parent)
     form_layout->addRow("Additional Parameters:", parameters_edit = new QPlainTextEdit);
     parameters_edit->setPlaceholderText("One argument per line");
     parameters_edit->setMaximumHeight(100);
+
+    form_layout->addRow("Notes:", notes_edit = new QPlainTextEdit);
+    notes_edit->setPlaceholderText("Notes about this model");
+    notes_edit->setMaximumHeight(100);
 
     auto* ok_cancel_layout = new QHBoxLayout;
     auto* ok_btn = new QPushButton("OK");
@@ -149,11 +153,10 @@ void ModelManagerDialog::clearForm() {
     diffusion_model_edit->clear();
     llm_edit->clear();
     vae_edit->clear();
-    width_spin->setValue(512);
-    height_spin->setValue(512);
     source_image_required_check->setChecked(true);
     ext_combo->setCurrentText(".avi");
     parameters_edit->clear();
+    notes_edit->clear();
 }
 
 void ModelManagerDialog::loadForm(const QString& uuid) {
@@ -163,11 +166,10 @@ void ModelManagerDialog::loadForm(const QString& uuid) {
             diffusion_model_edit->setText(m.diffusionModel);
             llm_edit->setText(m.llm);
             vae_edit->setText(m.vae);
-            width_spin->setValue(m.width);
-            height_spin->setValue(m.height);
             source_image_required_check->setChecked(m.sourceImageRequired);
             ext_combo->setCurrentText(m.ext);
             parameters_edit->setPlainText(m.additionalParameters.join('\n'));
+            notes_edit->setPlainText(m.notes);
             return;
         }
     }
@@ -198,8 +200,6 @@ void ModelManagerDialog::addModel() {
     m.diffusionModel = diffusion_model_edit->text();
     m.llm = llm_edit->text();
     m.vae = vae_edit->text();
-    m.width = width_spin->value();
-    m.height = height_spin->value();
     m.sourceImageRequired = source_image_required_check->isChecked();
     m.ext = ext_combo->currentText();
     QStringList params = parameters_edit->toPlainText().split('\n', Qt::SkipEmptyParts);
@@ -207,6 +207,7 @@ void ModelManagerDialog::addModel() {
         params[i] = params[i].trimmed();
     }
     m.additionalParameters = params;
+    m.notes = notes_edit->toPlainText();
     m.uuid = QUuid::createUuid().toString().remove("{").remove("}");
     SettingsManager::instance().models << m;
     SettingsManager::instance().save();
@@ -226,8 +227,6 @@ void ModelManagerDialog::editModel() {
             m.diffusionModel = diffusion_model_edit->text();
             m.llm = llm_edit->text();
             m.vae = vae_edit->text();
-            m.width = width_spin->value();
-            m.height = height_spin->value();
             m.sourceImageRequired = source_image_required_check->isChecked();
             m.ext = ext_combo->currentText();
             QStringList params = parameters_edit->toPlainText().split('\n', Qt::SkipEmptyParts);
@@ -235,6 +234,7 @@ void ModelManagerDialog::editModel() {
                 params[i] = params[i].trimmed();
             }
             m.additionalParameters = params;
+            m.notes = notes_edit->toPlainText();
             SettingsManager::instance().save();
             populateModels();
             return;

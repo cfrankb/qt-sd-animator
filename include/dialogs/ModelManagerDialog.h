@@ -41,9 +41,8 @@ private:
     QLineEdit* diffusion_model_edit;
     QLineEdit* llm_edit;
     QLineEdit* vae_edit;
-    QSpinBox* width_spin;
-    QSpinBox* height_spin;
     QCheckBox* source_image_required_check;
     QComboBox* ext_combo;
     QPlainTextEdit* parameters_edit;
+    QPlainTextEdit* notes_edit;
 };
