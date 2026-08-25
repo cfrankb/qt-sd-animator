@@ -62,14 +62,22 @@ MainWindow::MainWindow(QWidget* parent)
     for (const auto& path : SettingsManager::instance().recentlyOpened) {
         auto* act = new QAction(path, this);
         connect(act, &QAction::triggered, [this, path]() {
+            if (dirty) {
+                QMessageBox::StandardButton ret = QMessageBox::warning(this, "Unsaved Changes", "Save changes before opening?", QMessageBox::Save | QMessageBox::Discard | QMessageBox::Cancel);
+                if (ret == QMessageBox::Save) {
+                    if (!saveFile()) return;
+                } else if (ret == QMessageBox::Cancel) {
+                    return;
+                }
+            }
             SettingsManager::instance().addToRecentlyOpened(path);
-            SettingsManager::instance().save();
             if (SettingsManager::instance().loadSettings(path)) {
                 refreshDropDowns();
+                currentSavePath = path;
+                dirty = false;
+                setWindowTitle("qt-sd-animator - " + QFileInfo(path).fileName());
+                statusBar()->showMessage("Opened: " + path);
             }
-            currentSavePath = path;
-            SettingsManager::instance().addToRecentlyOpened(path);
-            setWindowTitle("qt-sd-animator - " + QFileInfo(path).fileName());
         });
         recent_menu->addAction(act);
     }
@@ -308,6 +316,25 @@ MainWindow::~MainWindow() {
     }
 }
 
+void MainWindow::closeEvent(QCloseEvent* event) {
+    if (dirty) {
+        QMessageBox::StandardButton ret = QMessageBox::warning(this, "Unsaved Changes", "Save changes before exiting?", QMessageBox::Save | QMessageBox::Discard | QMessageBox::Cancel);
+        if (ret == QMessageBox::Save) {
+            if (saveFile()) {
+                event->accept();
+            } else {
+                event->ignore();
+            }
+        } else if (ret == QMessageBox::Discard) {
+            event->accept();
+        } else {
+            event->ignore();
+        }
+    } else {
+        event->accept();
+    }
+}
+
 void MainWindow::refreshDropDowns()
 {
     // Refresh dropdowns
@@ -324,6 +351,14 @@ void MainWindow::refreshDropDowns()
 }
 
 void MainWindow::openFile() {
+    if (dirty) {
+        QMessageBox::StandardButton ret = QMessageBox::warning(this, "Unsaved Changes", "Save changes before opening?", QMessageBox::Save | QMessageBox::Discard | QMessageBox::Cancel);
+        if (ret == QMessageBox::Save) {
+            if (!saveFile()) return;
+        } else if (ret == QMessageBox::Cancel) {
+            return;
+        }
+    }
     QString file = QFileDialog::getOpenFileName(this, "Open Settings", "", "JSON Files (*.json);;All Files (*)");
     if (!file.isEmpty()) {
         if (!file.endsWith(".json")) {
@@ -331,9 +366,9 @@ void MainWindow::openFile() {
         }
         currentSavePath = file;
         
-        // Load settings from file
         if (SettingsManager::instance().loadSettings(file)) {
             refreshDropDowns();
+            dirty = false;
         }
         
         SettingsManager::instance().addToRecentlyOpened(file);
@@ -346,10 +381,9 @@ void MainWindow::openRecent() {
     // Handled via menu actions
 }
 
-void MainWindow::saveFile() {
+bool MainWindow::saveFile() {
     if (currentSavePath.isEmpty()) {
-        saveAsFile();
-        return;
+        return saveAsFile();
     }
     if (!currentSavePath.endsWith(".json")) {
         currentSavePath += ".json";
@@ -362,38 +396,48 @@ void MainWindow::saveFile() {
         SettingsManager::instance().save();
         setWindowTitle("qt-sd-animator - " + QFileInfo(currentSavePath).fileName());
         statusBar()->showMessage("Saved to: " + currentSavePath);
+        dirty = false;
+        return true;
     }
-    SettingsManager::instance().saveSettings(currentSavePath);
+    return false;
 }
 
-void MainWindow::saveAsFile() {
+bool MainWindow::saveAsFile() {
     QString file = QFileDialog::getSaveFileName(this, "Save Settings As", currentSavePath, "JSON Files (*.json);;All Files (*)");
-    if (!file.isEmpty()) {
-        if (!file.endsWith(".json")) {
-            file += ".json";
-        }
-        currentSavePath = file;
-        QJsonObject obj = SettingsManager::instance().toJson();
-        QFile outFile(file);
-        if (outFile.open(QIODevice::WriteOnly)) {
-            outFile.write(QJsonDocument(obj).toJson(QJsonDocument::Indented));
-            SettingsManager::instance().addToRecentlyOpened(file);
-            SettingsManager::instance().save();
-            setWindowTitle("qt-sd-animator - " + QFileInfo(file).fileName());
-            statusBar()->showMessage("Saved to: " + file);
-        }
+    if (file.isEmpty()) {
+        return false;
     }
+    if (!file.endsWith(".json")) {
+        file += ".json";
+    }
+    currentSavePath = file;
+    QJsonObject obj = SettingsManager::instance().toJson();
+    QFile outFile(file);
+    if (outFile.open(QIODevice::WriteOnly)) {
+        outFile.write(QJsonDocument(obj).toJson(QJsonDocument::Indented));
+        SettingsManager::instance().addToRecentlyOpened(file);
+        SettingsManager::instance().save();
+        setWindowTitle("qt-sd-animator - " + QFileInfo(file).fileName());
+        statusBar()->showMessage("Saved to: " + file);
+        dirty = false;
+        return true;
+    }
+    return false;
 }
 
 void MainWindow::showGeneralSettings() {
     GeneralSettingsDialog dlg(this);
-    dlg.exec();
+    if (dlg.exec() == QDialog::Accepted) {
+        dirty = true;
+    }
 }
 
 void MainWindow::showModelManager() {
     ModelManagerDialog dlg(this);
-    dlg.exec();
-    refreshDropDowns();
+    if (dlg.exec() == QDialog::Accepted) {
+        refreshDropDowns();
+        dirty = true;
+    }
 }
 
 void MainWindow::showPresetManager() {
@@ -409,8 +453,6 @@ void MainWindow::newModel() {
         m.diffusionModel = dlg.diffusionModel();
         m.llm = dlg.llm();
         m.vae = dlg.vae();
-    //    m.width = dlg.width();
-     //   m.height = dlg.height();
         m.sourceImageRequired = dlg.sourceImageRequired();
         m.uuid = dlg.uuid();
         SettingsManager::instance().models << m;
@@ -419,6 +461,7 @@ void MainWindow::newModel() {
         for (const auto& mod : SettingsManager::instance().models) {
             model_combo->addItem(mod.name, QVariant(mod.uuid));
         }
+        dirty = true;
     }
 }
 
@@ -434,10 +477,7 @@ void MainWindow::savePreset() {
     p.uuid = QUuid::createUuid().toString().remove("{").remove("}");
     SettingsManager::instance().presets << p;
     SettingsManager::instance().save();
-    //preset_combo->clear();
-   // for (const auto& pr : SettingsManager::instance().presets) {
-      //  preset_combo->addItem(pr.name, QVariant(pr.uuid));
-    //}
+    dirty = true;
 }
 
 void MainWindow::processClicked() {

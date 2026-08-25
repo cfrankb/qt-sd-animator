@@ -36,8 +36,8 @@ public:
 private slots:
     void openFile();
     void openRecent();
-    void saveFile();
-    void saveAsFile();
+    bool saveFile();
+    bool saveAsFile();
     void showGeneralSettings();
     void showModelManager();
     void showPresetManager();
@@ -48,6 +48,7 @@ private slots:
     void selectSourceImage();
     void selectBgColor();
     QString executionTimeStr();
+    void closeEvent(QCloseEvent* event);
 
 
 private:
@@ -77,6 +78,7 @@ private:
     QString lastOutputDest;
     QString lastOutputFilename;
     QString currentSavePath;
+    bool dirty = false;
     QProcess* currentProcess = nullptr;
     QTimer* execution_timer = nullptr;
     QElapsedTimer execution_timer_elapsed;

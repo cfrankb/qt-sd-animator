@@ -1,9 +1,7 @@
 #pragma once
 
 #include <QDialog>
-#include <QListWidget>
 #include <QLineEdit>
-#include <QSpinBox>
 #include <QComboBox>
 #include <QPushButton>
 #include <QVBoxLayout>
@@ -12,9 +10,9 @@
 #include <QFormLayout>
 #include <QMessageBox>
 #include <QUuid>
-#include <QTextEdit>
 #include <QCheckBox>
 #include <QPlainTextEdit>
+#include "SettingsManager.h"
 
 class ModelManagerDialog : public QDialog {
     Q_OBJECT
@@ -27,16 +25,20 @@ public:
 
 private slots:
     void addModel();
-    void editModel();
     void duplicateModel();
     void deleteModel();
+    void onModelChanged(int index);
+    void acceptDialog();
 
 private:
-    void populateModels();
-    void clearForm();
-    void loadForm(const QString& uuid);
+    void populateCombo();
+    void saveFormToLocal();
+    void loadFormFromLocal(int index);
 
-    QListWidget* models_list;
+    QComboBox* model_combo;
+    QList<ModelSettings> localModels;
+    int currentModelIndex = -1;
+
     QLineEdit* name_edit;
     QLineEdit* diffusion_model_edit;
     QLineEdit* llm_edit;
