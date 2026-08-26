@@ -17,8 +17,9 @@ set(SOURCES
     src/SubprocessHandler.cpp
     src/dialogs/GeneralSettingsDialog.cpp
     src/dialogs/ModelManagerDialog.cpp
-    src/dialogs/PresetManagerDialog.cpp
+    #src/dialogs/PresetManagerDialog.cpp
     src/dialogs/NewModelDialog.cpp
+    src/dialogs/SizeManagerDialog.cpp
 )
 
 set(HEADERS
@@ -27,8 +28,9 @@ set(HEADERS
     include/SubprocessHandler.h
     include/dialogs/GeneralSettingsDialog.h
     include/dialogs/ModelManagerDialog.h
-    include/dialogs/PresetManagerDialog.h
+    #include/dialogs/PresetManagerDialog.h
     include/dialogs/NewModelDialog.h
+    include/dialogs/SizeManagerDialog.h
 )
 
 add_executable(qt-sd-animator

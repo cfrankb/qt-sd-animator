@@ -2,8 +2,8 @@
 #include "SettingsManager.h"
 #include "dialogs/GeneralSettingsDialog.h"
 #include "dialogs/ModelManagerDialog.h"
-#include "dialogs/PresetManagerDialog.h"
 #include "dialogs/NewModelDialog.h"
+#include "dialogs/SizeManagerDialog.h"
 #include <QMenuBar>
 #include <QMenu>
 #include <QAction>
@@ -26,26 +26,24 @@
 #include <QPushButton>
 #include <QColorDialog>
 #include <QIcon>
+#include <QRandomGenerator>
 
-
-struct PixelSize {
-    int w;
-    int h;
-    QString s;
-};
-
-PixelSize sizes[] = {
-    {512, 512, "1:1 512x512 (small)"},
-    {848, 1264, "2:3 848x1264"},
-    {1024, 1024, "1:1 1024x1024"},
-    {1024, 768, "4:3 1024x768"},
-    {1376, 768, "16:9 1376x768"},
-};
+static const QList<PixelSize> default_sizes= {
+    {512, 512, "1:1 512x512 (small)", "a1b2c3d4-e5f6-7890-abcd-ef1234567890"},
+    {848, 1264, "2:3 848x1264", "b2c3d4e5-f6a7-8901-bcde-f12345678901"},
+    {1024, 1024, "1:1 1024x1024", "c3d4e5f6-a7b8-9012-cdef-123456789012"},
+    {1024, 768, "4:3 1024x768", "d4e5f6a7-b8c9-0123-def1-234567890123"},
+    {1376, 768, "16:9 1376x768", "e5f6a7b8-c9d0-1234-ef12-345678901234"},
+                                                  };
 
 MainWindow::MainWindow(QWidget* parent)
     : QMainWindow(parent) {
-    setWindowTitle("qt-sd-animator");
+
+    updateWindowTitle();
     setMinimumSize(800, 600);
+
+
+    SettingsManager::instance().m_sizes = default_sizes;
 
     auto* centralWidget = new QWidget(this);
     setCentralWidget(centralWidget);
@@ -58,29 +56,8 @@ MainWindow::MainWindow(QWidget* parent)
     connect(open_act, &QAction::triggered, this, &MainWindow::openFile);
     file_menu->addAction(open_act);
 
-    auto* recent_menu = file_menu->addMenu("Recently Open");
-    for (const auto& path : SettingsManager::instance().recentlyOpened) {
-        auto* act = new QAction(path, this);
-        connect(act, &QAction::triggered, [this, path]() {
-            if (m_dirty) {
-                QMessageBox::StandardButton ret = QMessageBox::warning(this, "Unsaved Changes", "Save changes before opening?", QMessageBox::Save | QMessageBox::Discard | QMessageBox::Cancel);
-                if (ret == QMessageBox::Save) {
-                    if (!saveFile()) return;
-                } else if (ret == QMessageBox::Cancel) {
-                    return;
-                }
-            }
-            SettingsManager::instance().addToRecentlyOpened(path);
-            if (SettingsManager::instance().loadSettings(path)) {
-                refreshDropDowns();
-                m_currentSavePath = path;
-                m_dirty = false;
-                setWindowTitle("qt-sd-animator - " + QFileInfo(path).fileName());
-                statusBar()->showMessage("Opened: " + path);
-            }
-        });
-        recent_menu->addAction(act);
-    }
+    m_recent_menu = file_menu->addMenu("Recently Open");
+    updateRecentFileList();
 
     auto* save_act = new QAction("Save", this);
     connect(save_act, &QAction::triggered, this, &MainWindow::saveFile);
@@ -102,9 +79,9 @@ MainWindow::MainWindow(QWidget* parent)
     connect(model_mgr_act, &QAction::triggered, this, &MainWindow::showModelManager);
     tool_menu->addAction(model_mgr_act);
 
-    /*auto* preset_mgr_act = new QAction("Preset Manager", this);
-    connect(preset_mgr_act, &QAction::triggered, this, &MainWindow::showPresetManager);
-    tool_menu->addAction(preset_mgr_act);*/
+    auto* size_mgr_act = new QAction("Size Manager", this);
+    connect(size_mgr_act, &QAction::triggered, this, &MainWindow::showSizeManager);
+    tool_menu->addAction(size_mgr_act);
 
     auto* exit_act = new QAction("Exit", this);
     connect(exit_act, &QAction::triggered, this, &QMainWindow::close);
@@ -119,15 +96,7 @@ MainWindow::MainWindow(QWidget* parent)
     auto* model_layout = new QHBoxLayout;
     model_layout->addWidget(new QLabel("Model:"));
     m_modelCombo = new QComboBox;
-    for (const auto& m : SettingsManager::instance().models) {
-        m_modelCombo->addItem(m.name, QVariant(m.uuid));
-    }
     model_layout->addWidget(m_modelCombo);
-    /*
-    auto* new_model_btn = new QPushButton("NEW MODEL");
-    model_layout->addWidget(new_model_btn);
-    connect(new_model_btn, &QPushButton::clicked, this, &MainWindow::newModel);
-    */
     ws_layout->addLayout(model_layout);
 
     // Size selector
@@ -143,31 +112,8 @@ MainWindow::MainWindow(QWidget* parent)
     size_layout->addWidget(m_sizeCombo);
     ws_layout->addLayout(size_layout);
 
-    // Preset selector
-    /*
-    auto* preset_layout = new QHBoxLayout;
-    preset_layout->addWidget(new QLabel("Preset:"));
-    preset_combo = new QComboBox;
-    for (const auto& p : SettingsManager::instance().presets) {
-        preset_combo->addItem(p.name, QVariant(p.uuid));
-    }
-    preset_layout->addWidget(preset_combo);
-    auto* save_preset_btn = new QPushButton("SAVE");
-    preset_layout->addWidget(save_preset_btn);
-    connect(save_preset_btn, &QPushButton::clicked, this, &MainWindow::savePreset);
-    ws_layout->addLayout(preset_layout);*/
-
-    // Background color
-    auto* bg_layout = new QHBoxLayout;
-    //bg_layout->addWidget(new QLabel("Background Color:"));
-    m_bgColorLabel = new QLabel;
-    m_bgColorLabel->setFixedSize(100, 20);
-    m_bgColorLabel->setStyleSheet("border: 1px solid black;");
-   // bg_layout->addWidget(m_bgColorLabel);
-    auto* color_btn = new QPushButton("Select Color");
-   // bg_layout->addWidget(color_btn);
-    connect(color_btn, &QPushButton::clicked, this, &MainWindow::selectBgColor);
-    ws_layout->addLayout(bg_layout);
+    // Refresh dropdowns after both combo boxes are created
+    refreshDropDowns();
 
     // Source image
     auto* src_layout = new QHBoxLayout;
@@ -228,16 +174,7 @@ MainWindow::MainWindow(QWidget* parent)
     m_filenameEdit->setPlaceholderText("basename");
     m_filenameEdit->setFixedWidth(400);
     dest_layout->addWidget(m_filenameEdit);
-    //auto* browse_dest_btn = new QPushButton("Browse...");
-    //dest_layout->addWidget(browse_dest_btn);
     ws_layout->addLayout(dest_layout);
-    /*connect(browse_dest_btn, &QPushButton::clicked, [this]() {
-        QString dir = QFileDialog::getExistingDirectory(this, "Select Output Destination");
-        if (!dir.isEmpty()) {
-            m_outputDestEdit->setText(dir);
-            m_lastOutputDest = dir;
-        }
-    });*/
 
     // Datetime checkbox
     auto* datetime_layout = new QHBoxLayout;
@@ -269,20 +206,7 @@ MainWindow::MainWindow(QWidget* parent)
     m_executionTimeLabel->setAlignment(Qt::AlignRight);
     m_executionTimeLabel->setStyleSheet("font-weight: bold; font-size: 14px;");
     mainLayout->addWidget(m_executionTimeLabel);
-
-    // Connect preset selection to populate prompt fields
-    /*
-    connect(preset_combo, QOverload<int>::of(&QComboBox::currentIndexChanged), [this](int index) {
-        if (index < 0 || index >= SettingsManager::instance().presets.size()) return;
-        const auto& p = SettingsManager::instance().presets[index];
-        m_promptEdit->setPlainText(p.prompt);
-        m_negativePromptEdit->setPlainText(p.negativePrompt);
-        m_seedEdit->setText(p.seed);
-    });*/
-
     // Load saved settings
-    m_bgColor = Qt::black;
-    m_bgColorLabel->setStyleSheet("background-color: " + m_bgColor.name() + ";");
 
     // Status bar
     statusBar()->show();
@@ -296,6 +220,46 @@ MainWindow::MainWindow(QWidget* parent)
     });
 }
 
+void MainWindow::updateRecentFileList()
+{
+    if (!m_recent_menu) return;
+    m_recent_menu->clear();
+    // Make a copy to avoid modifying the list while iterating
+    QStringList recentPaths = SettingsManager::instance().recentlyOpened;
+    for (const auto& path : recentPaths) {
+        if (path.isEmpty()) continue;
+        auto* act = new QAction(path, this);
+        connect(act, &QAction::triggered, this, [this, path]() {
+            openRecentFile(path);
+        });
+        m_recent_menu->addAction(act);
+    }
+}
+
+void MainWindow::openRecentFile(const QString& path)
+{
+    if (m_dirty) {
+        QMessageBox::StandardButton ret = QMessageBox::warning(this, "Unsaved Changes", "Save changes before opening?", QMessageBox::Save | QMessageBox::Discard | QMessageBox::Cancel);
+        if (ret == QMessageBox::Save) {
+            if (!saveFile()) return;
+        } else if (ret == QMessageBox::Cancel) {
+            return;
+        }
+    }
+    SettingsManager::instance().addToRecentlyOpened(path);
+    if (SettingsManager::instance().loadSettings(path)) {
+        refreshDropDowns();
+        m_currentSavePath = path;
+        m_dirty = false;
+        updateWindowTitle();
+        statusBar()->showMessage("Opened: " + path);
+    }
+    if (SettingsManager::instance().m_sizes.isEmpty()) {
+        SettingsManager::instance().m_sizes = default_sizes;
+    }
+    refreshDropDowns();
+    updateRecentFileList();
+}
 
 QString MainWindow::executionTimeStr()
 {
@@ -320,34 +284,89 @@ void MainWindow::closeEvent(QCloseEvent* event) {
     if (m_dirty) {
         QMessageBox::StandardButton ret = QMessageBox::warning(this, "Unsaved Changes", "Save changes before exiting?", QMessageBox::Save | QMessageBox::Discard | QMessageBox::Cancel);
         if (ret == QMessageBox::Save) {
-            if (saveFile()) {
-                event->accept();
-            } else {
+            if (!saveFile()) {
                 event->ignore();
+                return;
             }
-        } else if (ret == QMessageBox::Discard) {
-            event->accept();
-        } else {
+        } else if (ret == QMessageBox::Cancel) {
             event->ignore();
+            return;
         }
-    } else {
-        event->accept();
     }
+    // Save recently opened list before exiting
+    try {
+        SettingsManager::instance().save();
+    } catch (...) {
+        // Ignore save errors on exit
+    }
+    event->accept();
 }
 
 void MainWindow::refreshDropDowns()
 {
     // Refresh dropdowns
+    QString currentUuid;
+    if (m_modelCombo->count() > 0) {
+        currentUuid = m_modelCombo->currentData().toString();
+    }
     m_modelCombo->clear();
     for (const auto& m : SettingsManager::instance().models) {
         m_modelCombo->addItem(m.name, QVariant(m.uuid));
     }
+    if (!currentUuid.isEmpty()) {
+        int idx = m_modelCombo->findData(currentUuid);
+        if (idx >= 0) {
+            m_modelCombo->setCurrentIndex(idx);
+        }
+    }
 
-    /*
-    preset_combo->clear();
-    for (const auto& p : SettingsManager::instance().presets) {
-        preset_combo->addItem(p.name, QVariant(p.uuid));
-    }*/
+    // Refresh size combo from m_sizes
+    QString currentSizeUuid;
+    if (m_sizeCombo->count() > 0) {
+        currentSizeUuid = m_sizeCombo->currentData().toString();
+    }
+    m_sizeCombo->clear();
+    for (const auto& size : SettingsManager::instance().m_sizes) {
+        m_sizeCombo->addItem(size.text, QVariant(size.uuid));
+    }
+    if (!currentSizeUuid.isEmpty()) {
+        int idx = m_sizeCombo->findData(currentSizeUuid);
+        if (idx >= 0) {
+            m_sizeCombo->setCurrentIndex(idx);
+        }
+    }
+}
+
+void MainWindow::updateWindowTitle()
+{
+    QString base = "qt-sd-animator";
+    if (!m_currentSavePath.isEmpty()) {
+        base += " - " + QFileInfo(m_currentSavePath).fileName();
+    }
+    if (m_dirty) {
+        base += " *";
+    }
+    setWindowTitle(base);
+}
+
+void MainWindow::loadSizeConfig(const QJsonArray &sizesArr)
+{
+    if (sizesArr.isEmpty()) {
+        // Populate with default sizes
+        SettingsManager::instance().m_sizes =  default_sizes;
+    } else {
+        // Load sizes from file
+        auto &sizes = SettingsManager::instance().m_sizes;
+        sizes.clear();
+        for (const auto& sizeVal : sizesArr) {
+            PixelSize size;
+            size.w = sizeVal.toObject().value("w").toInt();
+            size.h = sizeVal.toObject().value("h").toInt();
+            size.text = sizeVal.toObject().value("text").toString();
+            size.uuid = sizeVal.toObject().value("uuid").toString();
+            sizes.append(size);
+        }
+    }
 }
 
 void MainWindow::openFile() {
@@ -365,14 +384,32 @@ void MainWindow::openFile() {
             file += ".json";
         }
         m_currentSavePath = file;
-        
+
+        // Load the file to check for sizes
+        QFile loadFile(file);
+        bool sizesLoaded = false;
+        if (loadFile.open(QIODevice::ReadOnly)) {
+            QJsonDocument doc = QJsonDocument::fromJson(loadFile.readAll());
+            if (doc.isObject()) {
+                QJsonObject obj = doc.object();
+                QJsonArray sizesArr = obj.value("sizes").toArray();
+                loadSizeConfig(sizesArr);
+                sizesLoaded = true;
+            }
+        }
+
         if (SettingsManager::instance().loadSettings(file)) {
             refreshDropDowns();
             m_dirty = false;
+        } else if (sizesLoaded) {
+            // If loadSettings fails but we loaded sizes, still refresh and clear dirty
+            refreshDropDowns();
+            m_dirty = false;
         }
-        
+
         SettingsManager::instance().addToRecentlyOpened(file);
-        setWindowTitle("qt-sd-animator - " + QFileInfo(file).fileName());
+        updateRecentFileList();
+        updateWindowTitle();
         statusBar()->showMessage("Opened: " + file);
     }
 }
@@ -388,15 +425,16 @@ bool MainWindow::saveFile() {
     if (!m_currentSavePath.endsWith(".json")) {
         m_currentSavePath += ".json";
     }
+    // Sync m_sizes to SettingsManager before saving
     QJsonObject obj = SettingsManager::instance().toJson();
     QFile file(m_currentSavePath);
     if (file.open(QIODevice::WriteOnly)) {
         file.write(QJsonDocument(obj).toJson(QJsonDocument::Indented));
         SettingsManager::instance().addToRecentlyOpened(m_currentSavePath);
         SettingsManager::instance().save();
-        setWindowTitle("qt-sd-animator - " + QFileInfo(m_currentSavePath).fileName());
-        statusBar()->showMessage("Saved to: " + m_currentSavePath);
         m_dirty = false;
+        updateWindowTitle();
+        statusBar()->showMessage("Saved to: " + m_currentSavePath);
         return true;
     }
     return false;
@@ -411,15 +449,16 @@ bool MainWindow::saveAsFile() {
         file += ".json";
     }
     m_currentSavePath = file;
+    // Sync m_sizes to SettingsManager before saving
     QJsonObject obj = SettingsManager::instance().toJson();
     QFile outFile(file);
     if (outFile.open(QIODevice::WriteOnly)) {
         outFile.write(QJsonDocument(obj).toJson(QJsonDocument::Indented));
         SettingsManager::instance().addToRecentlyOpened(file);
         SettingsManager::instance().save();
-        setWindowTitle("qt-sd-animator - " + QFileInfo(file).fileName());
-        statusBar()->showMessage("Saved to: " + file);
         m_dirty = false;
+        updateWindowTitle();
+        statusBar()->showMessage("Saved to: " + file);
         return true;
     }
     return false;
@@ -429,6 +468,7 @@ void MainWindow::showGeneralSettings() {
     GeneralSettingsDialog dlg(this);
     if (dlg.exec() == QDialog::Accepted) {
         m_dirty = true;
+        updateWindowTitle();
     }
 }
 
@@ -437,13 +477,21 @@ void MainWindow::showModelManager() {
     if (dlg.exec() == QDialog::Accepted) {
         refreshDropDowns();
         m_dirty = true;
+        updateWindowTitle();
     }
 }
 
-void MainWindow::showPresetManager() {
-    PresetManagerDialog dlg(this);
-    dlg.exec();
+void MainWindow::showSizeManager() {
+    SizeManagerDialog dlg(this);
+    if (dlg.exec() == QDialog::Accepted) {
+        // Sync m_sizes from SettingsManager after dialog accepts
+        refreshDropDowns();
+        m_dirty = true;
+        updateWindowTitle();
+    }
 }
+
+
 
 void MainWindow::newModel() {
     NewModelDialog dlg(this);
@@ -457,28 +505,12 @@ void MainWindow::newModel() {
         m.uuid = dlg.uuid();
         SettingsManager::instance().models << m;
         SettingsManager::instance().save();
-        m_modelCombo->clear();
-        for (const auto& mod : SettingsManager::instance().models) {
-            m_modelCombo->addItem(mod.name, QVariant(mod.uuid));
-        }
+        refreshDropDowns();
         m_dirty = true;
+        updateWindowTitle();
     }
 }
 
-void MainWindow::savePreset() {
-    QString name = QInputDialog::getText(this, "Save Preset", "Enter preset name:");
-    if (name.isEmpty()) return;
-
-    PresetSettings p;
-    p.name = name;
-    p.prompt = m_promptEdit->toPlainText();
-    p.negativePrompt = m_negativePromptEdit->toPlainText();
-    p.seed = m_seedEdit->text();
-    p.uuid = QUuid::createUuid().toString().remove("{").remove("}");
-    SettingsManager::instance().presets << p;
-    SettingsManager::instance().save();
-    m_dirty = true;
-}
 
 void MainWindow::processClicked() {
     int modelIndex = m_modelCombo->currentIndex();
@@ -509,10 +541,6 @@ void MainWindow::processClicked() {
         m_outputWidget->append("[ERROR] Prompt is required.");
         return;
     }
-    //if (m_filenameEdit->text().isEmpty()) {
-    //    m_outputWidget->append("[ERROR] Output filename is required.");
-    //    return;
-   // }
 
     // Disable PROCESS button, enable STOP button
     m_processBtn->setEnabled(false);
@@ -633,7 +661,6 @@ void MainWindow::processClicked() {
 
         // Write companion JSON
         QJsonObject presetObj;
-     //   presetObj["name"] = preset_combo->currentText();
         presetObj["prompt"] = m_promptEdit->toPlainText();
         presetObj["negative_prompt"] = m_negativePromptEdit->toPlainText();
         presetObj["seed"] = m_seedEdit->text();
@@ -646,7 +673,7 @@ void MainWindow::processClicked() {
         }
         presetObj["width"] = QString::number(width);
         presetObj["height"] = QString::number(height);
-        writeCompanionJson(outputPath, command,  model, presetObj, m_sourceImageEdit->text(), m_bgColor.name(), exitCode);
+        writeCompanionJson(outputPath, command,  model, presetObj, m_sourceImageEdit->text(), exitCode);
 
         m_currentProcess->deleteLater();
         m_currentProcess = nullptr;
@@ -687,13 +714,6 @@ void MainWindow::selectSourceImage() {
     }
 }
 
-void MainWindow::selectBgColor() {
-    QColor color = QColorDialog::getColor(Qt::black, this, "Select Background Color");
-    if (color.isValid()) {
-        m_bgColor = color;
-        m_bgColorLabel->setStyleSheet("background-color: " + color.name() + ";");
-    }
-}
 
 void MainWindow::buildProcessArgs(QString& binaryPath, QStringList& args) {
     // Used for debugging - constructs the full command string
@@ -701,11 +721,10 @@ void MainWindow::buildProcessArgs(QString& binaryPath, QStringList& args) {
     args << "--test";
 }
 
-void MainWindow::writeCompanionJson(const QString& outputPath, const QString& command, const ModelSettings& model, const QJsonObject &presetObj, const QString& sourceImage, const QString& bgColor, int exitCode) {
+void MainWindow::writeCompanionJson(const QString& outputPath, const QString& command, const ModelSettings& model, const QJsonObject &presetObj, const QString& sourceImage,  int exitCode) {
     QJsonObject json;
     json["command"] = command;
     json["source_image"] = sourceImage;
- //   json["bg_color"] = bgColor;
     json["timestamp"] = QDateTime::currentDateTime().toString(Qt::ISODate);
     json["exit_code"] = exitCode;
 
@@ -714,8 +733,6 @@ void MainWindow::writeCompanionJson(const QString& outputPath, const QString& co
     modelObj["diffusion-model"] = model.diffusionModel;
     modelObj["llm"] = model.llm;
     modelObj["vae"] = model.vae;
-  //  modelObj["width"] = model.width;
-  //  modelObj["height"] = model.height;
     modelObj["source_image_required"] = model.sourceImageRequired;
     json["model"] = modelObj;
     json["preset"] = presetObj;

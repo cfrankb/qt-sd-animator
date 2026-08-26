@@ -15,11 +15,8 @@ GeneralSettingsDialog::GeneralSettingsDialog(QWidget* parent)
     : QDialog(parent) {
     setWindowTitle("General Settings");
     setMinimumWidth(500);
-
     auto* mainLayout = new QVBoxLayout(this);
-
     auto* formLayout = new QFormLayout;
-
     auto* bin_label = new QLabel("SD-CLI Binary Path:");
     formLayout->addRow(bin_label, m_binSdCliEdit = new QLineEdit);
     m_binSdCliEdit->setText(SettingsManager::instance().general.bin_sd_cli);

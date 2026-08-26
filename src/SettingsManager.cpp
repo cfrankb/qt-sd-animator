@@ -111,7 +111,7 @@ void SettingsManager::loadFromJson(const QJsonObject& obj) {
         m.sourceImageRequired = modelVal.toObject().value("source_image_required").toBool(true);
         m.ext = modelVal.toObject().value("ext").toString(".avi");
         m.notes = modelVal.toObject().value("notes").toString();
-        
+
         // Handle backward compatibility: parameters may be string or array
         QJsonValue paramsVal = modelVal.toObject().value("additional_parameters");
         if (paramsVal.isString()) {
@@ -137,6 +137,18 @@ void SettingsManager::loadFromJson(const QJsonObject& obj) {
         p.uuid = presetVal.toObject().value("uuid").toString();
         presets << p;
     }
+
+    // Load sizes
+    m_sizes.clear();
+    QJsonArray sizesArr = obj.value("sizes").toArray();
+    for (const auto& sizeVal : sizesArr) {
+        PixelSize size;
+        size.w = sizeVal.toObject().value("w").toInt();
+        size.h = sizeVal.toObject().value("h").toInt();
+        size.text = sizeVal.toObject().value("text").toString();
+        size.uuid = sizeVal.toObject().value("uuid").toString();
+        m_sizes.append(size);
+    }
 }
 
 QJsonObject SettingsManager::toJson() const {
@@ -157,7 +169,7 @@ QJsonObject SettingsManager::toJson() const {
         mObj["source_image_required"] = m.sourceImageRequired;
         mObj["ext"] = m.ext;
         mObj["notes"] = m.notes;
-        
+
         // Save additional_parameters as JSON array
         QJsonArray paramsArr;
         for (const auto& param : m.additionalParameters) {
@@ -179,6 +191,18 @@ QJsonObject SettingsManager::toJson() const {
         presetsArr << pObj;
     }
     obj["presets"] = presetsArr;
+
+    // Save sizes
+    QJsonArray sizesArr;
+    for (const auto& size : m_sizes) {
+        QJsonObject sizeObj;
+        sizeObj["w"] = size.w;
+        sizeObj["h"] = size.h;
+        sizeObj["text"] = size.text;
+        sizeObj["uuid"] = size.uuid;
+        sizesArr << sizeObj;
+    }
+    obj["sizes"] = sizesArr;
 
     return obj;
 }

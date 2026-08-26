@@ -128,12 +128,5 @@
     ],
     "output_path": "/home/cfrankb/Documents/out",
     "presets": [
-        {
-            "name": "logo",
-            "negative_prompt": "gradient background, shadows, lighting, texture, shading, depth, 3D effect, dark edges, vignette, background noise, blurry, photorealistic",
-            "prompt": "A detailed 16-bit pixel art sprite of a scary monster, facing forward directly toward the camera, isolated on a solid cyan background. The creature has a massive, oversized round head with two large, sharp, curved horns sprouting from the top. Its face features tiny, dark, glowing beady eyes with a creepy, unsettling expression and a wide, terrifying open mouth prominently showing rows of razor-sharp, jagged teeth. The entire head is covered in thick, shaggy, tufted patches of wild hair that completely dominates its body. It has disproportionately small, stubby arms and tiny, thin legs sticking out from its messy, hairy silhouette. Clean pixel placement, sharp outlines, vibrant retro color palette, classic horror video game aesthetic.",
-            "seed": "",
-            "uuid": "957d919c-035d-489e-af0d-e586cb3fb644"
-        }
-    ]
+     ]
 }

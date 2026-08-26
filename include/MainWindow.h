@@ -25,6 +25,7 @@
 #include <QInputDialog>
 #include <QStatusBar>
 #include "SettingsManager.h"
+#include <QList>
 
 class MainWindow : public QMainWindow {
     Q_OBJECT
@@ -40,24 +41,26 @@ private slots:
     bool saveAsFile();
     void showGeneralSettings();
     void showModelManager();
-    void showPresetManager();
+    void showSizeManager();
     void newModel();
-    void savePreset();
     void processClicked();
     void stopClicked();
     void selectSourceImage();
-    void selectBgColor();
     QString executionTimeStr();
     void closeEvent(QCloseEvent* event);
+    void openRecentFile(const QString& path);
 
 
 private:
     void buildProcessArgs(QString& binaryPath, QStringList& args);
-    void writeCompanionJson(const QString& outputPath, const QString& command, const ModelSettings& model, const QJsonObject &presetObj, const QString& sourceImage, const QString& bgColor, int exitCode);
+    void writeCompanionJson(const QString& outputPath, const QString& command, const ModelSettings& model, const QJsonObject &presetObj, const QString& sourceImage,  int exitCode);
     void refreshDropDowns();
+    void updateWindowTitle();
+    void refreshRecentMenu();
+    void updateRecentFileList();
+    void loadSizeConfig(const QJsonArray &sizesArr);
 
     QComboBox* m_modelCombo;
- //   QComboBox* preset_combo;
     QComboBox* m_sizeCombo;
     QLineEdit* m_sourceImageEdit;
     QPlainTextEdit* m_promptEdit;
@@ -68,11 +71,9 @@ private:
     QLabel* m_executionTimeLabel;
     QPushButton* m_processBtn;
     QPushButton* m_stopBtn;
-    QLabel* m_bgColorLabel;
     QLineEdit* m_outputDestEdit;
     QLineEdit* m_filenameEdit;
     QCheckBox* m_datetimeCheckbox;
-    QColor m_bgColor;
 
     QString m_lastSourcePath;
     QString m_lastOutputDest;
@@ -82,4 +83,5 @@ private:
     QProcess* m_currentProcess = nullptr;
     QTimer* m_executionTimer = nullptr;
     QElapsedTimer m_executionTimerElapsed;
+    QMenu* m_recent_menu;
 };

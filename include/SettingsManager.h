@@ -21,8 +21,8 @@ struct ModelSettings {
     QString llm;
     QString vae;
     QString uuid;
-    bool sourceImageRequired = true;
-    QString ext = ".avi";
+    bool sourceImageRequired = false;
+    QString ext = ".png";
     QStringList additionalParameters;
     QString notes;
 };
@@ -46,10 +46,17 @@ struct ExecutedCommand {
     PresetSettings preset;
     GeneralSettings general;
     QString sourceImage;
-    QString bgColor;
     QString timestamp;
     int exitCode = -1;
 };
+
+struct PixelSize {
+    int w;
+    int h;
+    QString text;
+    QString uuid;
+};
+
 
 class SettingsManager {
 public:
@@ -65,6 +72,7 @@ public:
     QList<ModelSettings> models;
     QList<PresetSettings> presets;
     QStringList recentlyOpened;
+    QList<PixelSize> m_sizes;
 
     void addToRecentlyOpened(const QString& path);
     void loadFromJson(const QJsonObject& obj);
