@@ -59,9 +59,9 @@ void SettingsManager::load() {
     if (recentFile.exists() && recentFile.open(QIODevice::ReadOnly)) {
         QJsonDocument doc = QJsonDocument::fromJson(recentFile.readAll());
         if (doc.isArray()) {
-            recentlyOpened.clear();
+            m_recentlyOpened.clear();
             for (const auto& item : doc.array()) {
-                recentlyOpened << item.toString();
+                m_recentlyOpened << item.toString();
             }
         }
     }
@@ -76,7 +76,7 @@ void SettingsManager::save() {
     }*/
 
     QJsonArray arr;
-    for (const auto& path : recentlyOpened) {
+    for (const auto& path : m_recentlyOpened) {
         arr << path;
     }
     QFile recentFile(recentFilesPath());
@@ -86,18 +86,18 @@ void SettingsManager::save() {
 }
 
 void SettingsManager::addToRecentlyOpened(const QString& path) {
-    recentlyOpened.removeAll(path);
-    recentlyOpened.prepend(path);
-    if (recentlyOpened.size() > 10) {
-        recentlyOpened.removeLast();
+    m_recentlyOpened.removeAll(path);
+    m_recentlyOpened.prepend(path);
+    if (m_recentlyOpened.size() > 10) {
+        m_recentlyOpened.removeLast();
     }
 }
 
 void SettingsManager::loadFromJson(const QJsonObject& obj) {
-    general.bin_sd_cli = obj.value("bin_sd_cli").toString();
-    general.output_path = obj.value("output_path").toString();
+    m_general.bin_sd_cli = obj.value("bin_sd_cli").toString();
+    m_general.output_path = obj.value("output_path").toString();
 
-    models.clear();
+    m_models.clear();
     QJsonArray modelsArr = obj.value("models").toArray();
     for (const auto& modelVal : modelsArr) {
         ModelSettings m;
@@ -106,8 +106,6 @@ void SettingsManager::loadFromJson(const QJsonObject& obj) {
         m.llm = modelVal.toObject().value("llm").toString();
         m.vae = modelVal.toObject().value("vae").toString();
         m.uuid = modelVal.toObject().value("uuid").toString();
-        //m.width = modelVal.toObject().value("width").toInt(512);
-       // m.height = modelVal.toObject().value("height").toInt(512);
         m.sourceImageRequired = modelVal.toObject().value("source_image_required").toBool(true);
         m.ext = modelVal.toObject().value("ext").toString(".avi");
         m.notes = modelVal.toObject().value("notes").toString();
@@ -123,10 +121,10 @@ void SettingsManager::loadFromJson(const QJsonObject& obj) {
                 m.additionalParameters << item.toString();
             }
         }
-        models << m;
+        m_models << m;
     }
 
-    presets.clear();
+    m_presets.clear();
     QJsonArray presetsArr = obj.value("presets").toArray();
     for (const auto& presetVal : presetsArr) {
         PresetSettings p;
@@ -135,7 +133,7 @@ void SettingsManager::loadFromJson(const QJsonObject& obj) {
         p.negativePrompt = presetVal.toObject().value("negative_prompt").toString();
         p.seed = presetVal.toObject().value("seed").toString();
         p.uuid = presetVal.toObject().value("uuid").toString();
-        presets << p;
+        m_presets << p;
     }
 
     // Load sizes
@@ -153,19 +151,17 @@ void SettingsManager::loadFromJson(const QJsonObject& obj) {
 
 QJsonObject SettingsManager::toJson() const {
     QJsonObject obj;
-    obj["bin_sd_cli"] = general.bin_sd_cli;
-    obj["output_path"] = general.output_path;
+    obj["bin_sd_cli"] = m_general.bin_sd_cli;
+    obj["output_path"] = m_general.output_path;
 
     QJsonArray modelsArr;
-    for (const auto& m : models) {
+    for (const auto& m : m_models) {
         QJsonObject mObj;
         mObj["name"] = m.name;
         mObj["diffusion-model"] = m.diffusionModel;
         mObj["llm"] = m.llm;
         mObj["vae"] = m.vae;
         mObj["uuid"] = m.uuid;
-       // mObj["width"] = m.width;
-      //  mObj["height"] = m.height;
         mObj["source_image_required"] = m.sourceImageRequired;
         mObj["ext"] = m.ext;
         mObj["notes"] = m.notes;
@@ -181,7 +177,7 @@ QJsonObject SettingsManager::toJson() const {
     obj["models"] = modelsArr;
 
     QJsonArray presetsArr;
-    for (const auto& p : presets) {
+    for (const auto& p : m_presets) {
         QJsonObject pObj;
         pObj["name"] = p.name;
         pObj["prompt"] = p.prompt;

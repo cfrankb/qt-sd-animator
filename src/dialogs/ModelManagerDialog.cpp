@@ -110,7 +110,7 @@ ModelManagerDialog::ModelManagerDialog(QWidget* parent)
     connect(cancel_btn, &QPushButton::clicked, this, &QDialog::reject);
 
     // Load local copy
-    m_localModels = SettingsManager::instance().models;
+    m_localModels = SettingsManager::instance().m_models;
     populateCombo();
     if (m_modelCombo->count() > 0) {
         m_modelCombo->setCurrentIndex(0);
@@ -235,7 +235,7 @@ void ModelManagerDialog::acceptDialog() {
     if (m_currentModelIndex >= 0) {
         saveFormToLocal();
     }
-    SettingsManager::instance().models = m_localModels;
+    SettingsManager::instance().m_models = m_localModels;
     SettingsManager::instance().save();
     accept();
 }

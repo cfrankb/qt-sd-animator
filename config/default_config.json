@@ -4,11 +4,12 @@
         {
             "additional_parameters": [
                 "--mode vid_gen",
-                "--video-frames 25",
+                "--video-frames 24",
                 "--steps 12",
                 "--cfg-scale 1.0",
                 "--backend te=cpu",
-                "--diffusion-fa"
+                "--diffusion-fa",
+                "--fps 24"
             ],
             "diffusion-model": "/disks/white/cfrankb/models/minimax/minimax_h3_fl2va_pruned-Q3_K.gguf",
             "ext": ".avi",
@@ -124,9 +125,67 @@
             "source_image_required": true,
             "uuid": "2fe3a807-003c-4e00-83f5-d88b1465c1a2",
             "vae": "/disks/white/cfrankb/models/qwen_image_edit/split_files/vae/qwen_image_vae.safetensors"
+        },
+        {
+            "additional_parameters": [
+                "--mode vid_gen",
+                "--video-frames 24",
+                "--fps 24",
+                "--steps 6",
+                "--cfg-scale 1.0",
+                "--backend te=cpu",
+                "--diffusion-fa",
+                "--lora-model-dir /disks/white/cfrankb/models/minimax/lora"
+            ],
+            "diffusion-model": "/disks/white/cfrankb/models/minimax/minimax_h3_fl2va_pruned-Q3_K.gguf",
+            "ext": ".avi",
+            "llm": "/disks/white/cfrankb/models/minimax/qwen3vl_32b_minimax_h3-Q2_K_M.gguf",
+            "name": "Minimax H3 - turbo",
+            "notes": "~/bin/get.sh larryvrh/MiniMax-H3-Turbo-Lora minimax_h3_turbo_v4_step600.safetensors\n",
+            "source_image_required": true,
+            "uuid": "135469e5-d458-403d-b1f3-ef3adf0a4266",
+            "vae": "/disks/white/cfrankb/models/minimax/minimax_h3_video_vae_fp16.safetensors"
         }
     ],
     "output_path": "/home/cfrankb/Documents/out",
     "presets": [
-     ]
+    ],
+    "sizes": [
+        {
+            "h": 512,
+            "text": "1:1 512x512 (small)",
+            "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+            "w": 512
+        },
+        {
+            "h": 1264,
+            "text": "2:3 848x1264",
+            "uuid": "b2c3d4e5-f6a7-8901-bcde-f12345678901",
+            "w": 848
+        },
+        {
+            "h": 1024,
+            "text": "1:1 1024x1024",
+            "uuid": "c3d4e5f6-a7b8-9012-cdef-123456789012",
+            "w": 1024
+        },
+        {
+            "h": 768,
+            "text": "4:3 1024x768",
+            "uuid": "d4e5f6a7-b8c9-0123-def1-234567890123",
+            "w": 1024
+        },
+        {
+            "h": 768,
+            "text": "16:9 1376x768",
+            "uuid": "e5f6a7b8-c9d0-1234-ef12-345678901234",
+            "w": 1376
+        },
+        {
+            "h": 720,
+            "text": "720p (1280x720)",
+            "uuid": "2c30eb7c-3667-4ecb-acad-ef746555d8f3",
+            "w": 1280
+        }
+    ]
 }

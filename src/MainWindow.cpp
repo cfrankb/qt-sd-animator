@@ -225,7 +225,7 @@ void MainWindow::updateRecentFileList()
     if (!m_recent_menu) return;
     m_recent_menu->clear();
     // Make a copy to avoid modifying the list while iterating
-    QStringList recentPaths = SettingsManager::instance().recentlyOpened;
+    QStringList recentPaths = SettingsManager::instance().m_recentlyOpened;
     for (const auto& path : recentPaths) {
         if (path.isEmpty()) continue;
         auto* act = new QAction(path, this);
@@ -310,7 +310,7 @@ void MainWindow::refreshDropDowns()
         currentUuid = m_modelCombo->currentData().toString();
     }
     m_modelCombo->clear();
-    for (const auto& m : SettingsManager::instance().models) {
+    for (const auto& m : SettingsManager::instance().m_models) {
         m_modelCombo->addItem(m.name, QVariant(m.uuid));
     }
     if (!currentUuid.isEmpty()) {
@@ -503,7 +503,7 @@ void MainWindow::newModel() {
         m.vae = dlg.vae();
         m.sourceImageRequired = dlg.sourceImageRequired();
         m.uuid = dlg.uuid();
-        SettingsManager::instance().models << m;
+        SettingsManager::instance().m_models << m;
         SettingsManager::instance().save();
         refreshDropDowns();
         m_dirty = true;
@@ -513,20 +513,23 @@ void MainWindow::newModel() {
 
 
 void MainWindow::processClicked() {
+
+    m_outputWidget->clear();
+
     int modelIndex = m_modelCombo->currentIndex();
-    if (modelIndex < 0 || modelIndex >= SettingsManager::instance().models.size()) {
+    if (modelIndex < 0 || modelIndex >= SettingsManager::instance().m_models.size()) {
         m_outputWidget->append("[ERROR] No model selected. cannot continue without model settings.");
         return;
     }
-    const auto& model = SettingsManager::instance().models[modelIndex];
+    const auto& model = SettingsManager::instance().m_models[modelIndex];
 
     // Sanity checks
-    if (SettingsManager::instance().general.bin_sd_cli.isEmpty()) {
+    if (SettingsManager::instance().m_general.bin_sd_cli.isEmpty()) {
         m_outputWidget->append("[ERROR] SD-CLI binary path not set. Please configure in Settings.");
         return;
     }
-    if (!QFileInfo::exists(SettingsManager::instance().general.bin_sd_cli)) {
-        m_outputWidget->append("[ERROR] SD-CLI binary not found at: " + SettingsManager::instance().general.bin_sd_cli);
+    if (!QFileInfo::exists(SettingsManager::instance().m_general.bin_sd_cli)) {
+        m_outputWidget->append("[ERROR] SD-CLI binary not found at: " + SettingsManager::instance().m_general.bin_sd_cli);
         return;
     }
     if (model.sourceImageRequired && m_sourceImageEdit->text().isEmpty()) {
@@ -551,7 +554,7 @@ void MainWindow::processClicked() {
     m_executionTimer->start(1000);
 
     // Create output directory if not exists
-    QString outputDirPath =  SettingsManager::instance().general.output_path;// m_filenameEdit->text();
+    QString outputDirPath =  SettingsManager::instance().m_general.output_path;// m_filenameEdit->text();
     if (outputDirPath.isEmpty()) {
         QMessageBox::critical(this, "Error", "Output directory is empty.");
         return;
@@ -592,7 +595,7 @@ void MainWindow::processClicked() {
     m_lastOutputDest = outputDirPath;
 
     // Build command arguments
-    QString binaryPath = SettingsManager::instance().general.bin_sd_cli;
+    QString binaryPath = SettingsManager::instance().m_general.bin_sd_cli;
     QStringList args;
 
     if (!m_sourceImageEdit->text().isEmpty())
@@ -654,7 +657,7 @@ void MainWindow::processClicked() {
         m_outputWidget->append("[STDERR] " + err);
     });
     connect(m_currentProcess, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished), [this, outputPath, command, modelIndex]() {
-        const auto& model = SettingsManager::instance().models[modelIndex];
+        const auto& model = SettingsManager::instance().m_models[modelIndex];
 
         int exitCode = m_currentProcess->exitCode();
         m_outputWidget->append("\n[INFO] Process finished with exit code: " + QString::number(exitCode));
@@ -717,7 +720,7 @@ void MainWindow::selectSourceImage() {
 
 void MainWindow::buildProcessArgs(QString& binaryPath, QStringList& args) {
     // Used for debugging - constructs the full command string
-    binaryPath = SettingsManager::instance().general.bin_sd_cli;
+    binaryPath = SettingsManager::instance().m_general.bin_sd_cli;
     args << "--test";
 }
 

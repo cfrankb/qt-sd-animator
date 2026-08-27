@@ -94,6 +94,7 @@ void SizeManagerDialog::populateCombo() {
 void SizeManagerDialog::onSizeChanged(int index) {
     // Save current form before switching
     if (m_currentSizeIndex >= 0 && m_currentSizeIndex < m_localSizes.size()) {
+        m_sizeCombo->setItemText(m_currentSizeIndex, m_textEdit->text());
         saveFormToLocal();
     }
     m_currentSizeIndex = index;
@@ -126,6 +127,7 @@ void SizeManagerDialog::saveFormToLocal() {
         return;
     }
     
+
     s.w = w;
     s.h = h;
 }

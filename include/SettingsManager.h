@@ -68,10 +68,10 @@ public:
     void load();
     void save();
 
-    GeneralSettings general;
-    QList<ModelSettings> models;
-    QList<PresetSettings> presets;
-    QStringList recentlyOpened;
+    GeneralSettings m_general;
+    QList<ModelSettings> m_models;
+    QList<PresetSettings> m_presets;
+    QStringList m_recentlyOpened;
     QList<PixelSize> m_sizes;
 
     void addToRecentlyOpened(const QString& path);

@@ -17,6 +17,6 @@ public:
     QString buildCommand(const QString& binaryPath, const QStringList& args) const;
 
 private:
-    QProcess* process = nullptr;
-    QTextEdit* outputWidget = nullptr;
+    QProcess* m_process = nullptr;
+    QTextEdit* m_outputWidget = nullptr;
 };

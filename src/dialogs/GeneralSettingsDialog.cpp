@@ -19,7 +19,7 @@ GeneralSettingsDialog::GeneralSettingsDialog(QWidget* parent)
     auto* formLayout = new QFormLayout;
     auto* bin_label = new QLabel("SD-CLI Binary Path:");
     formLayout->addRow(bin_label, m_binSdCliEdit = new QLineEdit);
-    m_binSdCliEdit->setText(SettingsManager::instance().general.bin_sd_cli);
+    m_binSdCliEdit->setText(SettingsManager::instance().m_general.bin_sd_cli);
     m_binSdCliEdit->setPlaceholderText("/path/to/sd-cli");
 
     auto* browse_bin_btn = new QPushButton("Browse...");
@@ -32,7 +32,7 @@ GeneralSettingsDialog::GeneralSettingsDialog(QWidget* parent)
 
     auto* output_label = new QLabel("Output Path:");
     formLayout->addRow(output_label, m_outputPathEdit = new QLineEdit);
-    m_outputPathEdit->setText(SettingsManager::instance().general.output_path);
+    m_outputPathEdit->setText(SettingsManager::instance().m_general.output_path);
     m_outputPathEdit->setPlaceholderText("/path/to/output");
 
     auto* browse_output_btn = new QPushButton("Browse...");
@@ -83,8 +83,8 @@ void GeneralSettingsDialog::accept() {
         QMessageBox::warning(this, "Validation Error", "Output path is required.");
         return;
     }
-    SettingsManager::instance().general.bin_sd_cli = m_binSdCliEdit->text();
-    SettingsManager::instance().general.output_path = m_outputPathEdit->text();
+    SettingsManager::instance().m_general.bin_sd_cli = m_binSdCliEdit->text();
+    SettingsManager::instance().m_general.output_path = m_outputPathEdit->text();
     SettingsManager::instance().save();
     QDialog::accept();
 }

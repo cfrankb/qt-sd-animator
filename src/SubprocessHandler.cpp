@@ -6,7 +6,7 @@
 #include <QStandardPaths>
 
 SubprocessHandler::SubprocessHandler(QObject* parent, QTextEdit* outputWidget)
-    : QObject(parent), outputWidget(outputWidget) {
+    : QObject(parent), m_outputWidget(outputWidget) {
 }
 
 QString SubprocessHandler::buildCommand(const QString& binaryPath, const QStringList& args) const {
@@ -18,47 +18,47 @@ QString SubprocessHandler::buildCommand(const QString& binaryPath, const QString
 }
 
 void SubprocessHandler::startProcess(const QString& binaryPath, const QStringList& args) {
-    if (process && process->state() == QProcess::Running) {
+    if (m_process && m_process->state() == QProcess::Running) {
         return;
     }
 
-    process = new QProcess(this);
-    connect(process, &QProcess::readyReadStandardOutput, this, [this]() {
-        QByteArray out = process->readAllStandardOutput();
-        if (outputWidget) {
-            outputWidget->append("[STDOUT] " + out);
+    m_process = new QProcess(this);
+    connect(m_process, &QProcess::readyReadStandardOutput, this, [this]() {
+        QByteArray out = m_process->readAllStandardOutput();
+        if (m_outputWidget) {
+            m_outputWidget->append("[STDOUT] " + out);
         }
     });
 
-    connect(process, &QProcess::readyReadStandardError, this, [this]() {
-        QByteArray err = process->readAllStandardError();
-        if (outputWidget) {
-            outputWidget->append("[STDERR] " + err);
+    connect(m_process, &QProcess::readyReadStandardError, this, [this]() {
+        QByteArray err = m_process->readAllStandardError();
+        if (m_outputWidget) {
+            m_outputWidget->append("[STDERR] " + err);
         }
     });
 
-    connect(process, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished),
+    connect(m_process, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished),
             this, [this](int exitCode, QProcess::ExitStatus exitStatus) {
-        if (outputWidget) {
-            outputWidget->append("\n[INFO] Process finished with exit code: " + QString::number(exitCode));
+        if (m_outputWidget) {
+            m_outputWidget->append("\n[INFO] Process finished with exit code: " + QString::number(exitCode));
         }
     });
 
     QString cmd = buildCommand(binaryPath, args);
-    if (outputWidget) {
-        outputWidget->append("\n[CMD] " + cmd);
+    if (m_outputWidget) {
+        m_outputWidget->append("\n[CMD] " + cmd);
     }
 
-    process->start(binaryPath, args);
+    m_process->start(binaryPath, args);
 }
 
 void SubprocessHandler::stopProcess() {
-    if (process && process->state() == QProcess::Running) {
-        process->kill();
-        process->waitForFinished(1000);
+    if (m_process && m_process->state() == QProcess::Running) {
+        m_process->kill();
+        m_process->waitForFinished(1000);
     }
 }
 
 bool SubprocessHandler::isRunning() const {
-    return process && process->state() == QProcess::Running;
+    return m_process && m_process->state() == QProcess::Running;
 }
