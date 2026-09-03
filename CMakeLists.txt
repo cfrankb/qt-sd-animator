@@ -31,6 +31,7 @@ set(HEADERS
     #include/dialogs/PresetManagerDialog.h
     include/dialogs/NewModelDialog.h
     include/dialogs/SizeManagerDialog.h
+    resources/resources.qrc
 )
 
 add_executable(qt-sd-animator

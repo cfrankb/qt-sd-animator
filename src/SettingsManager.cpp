@@ -46,15 +46,6 @@ bool SettingsManager::saveSettings(const QString &filename)
 
 
 void SettingsManager::load() {
-    /*
-    QFile file(settingsPath());
-    if (file.exists() && file.open(QIODevice::ReadOnly)) {
-        QJsonDocument doc = QJsonDocument::fromJson(file.readAll());
-        if (doc.isObject()) {
-            loadFromJson(doc.object());
-        }
-    }*/
-
     QFile recentFile(recentFilesPath());
     if (recentFile.exists() && recentFile.open(QIODevice::ReadOnly)) {
         QJsonDocument doc = QJsonDocument::fromJson(recentFile.readAll());
@@ -68,13 +59,6 @@ void SettingsManager::load() {
 }
 
 void SettingsManager::save() {
-    QJsonObject obj = toJson();
-    /*
-    QFile file(settingsPath());
-    if (file.open(QIODevice::WriteOnly)) {
-        file.write(QJsonDocument(obj).toJson(QJsonDocument::Indented));
-    }*/
-
     QJsonArray arr;
     for (const auto& path : m_recentlyOpened) {
         arr << path;

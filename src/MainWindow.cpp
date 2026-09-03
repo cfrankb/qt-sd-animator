@@ -26,6 +26,7 @@
 #include <QPushButton>
 #include <QColorDialog>
 #include <QIcon>
+#include <QSize>
 #include <QRandomGenerator>
 
 static const QList<PixelSize> default_sizes= {
@@ -41,6 +42,7 @@ MainWindow::MainWindow(QWidget* parent)
 
     updateWindowTitle();
     setMinimumSize(800, 600);
+    setWindowIcon(QIcon(":/app_icon"));
 
 
     SettingsManager::instance().m_sizes = default_sizes;
@@ -52,18 +54,26 @@ MainWindow::MainWindow(QWidget* parent)
     // Menu bar
     auto* file_menu = menuBar()->addMenu("File");
 
-    auto* open_act = new QAction("Open", this);
+    auto* new_file_act = new QAction("&New File", this);
+    new_file_act->setShortcut(QKeySequence::New);
+    connect(new_file_act, &QAction::triggered, this, &MainWindow::newFile);
+    file_menu->addAction(new_file_act);
+
+    auto* open_act = new QAction("&Open...", this);
+    open_act->setShortcut(QKeySequence::Open);
     connect(open_act, &QAction::triggered, this, &MainWindow::openFile);
     file_menu->addAction(open_act);
 
     m_recent_menu = file_menu->addMenu("Recently Open");
     updateRecentFileList();
 
-    auto* save_act = new QAction("Save", this);
+    auto* save_act = new QAction("&Save", this);
+    save_act->setShortcut(QKeySequence::Save);
     connect(save_act, &QAction::triggered, this, &MainWindow::saveFile);
     file_menu->addAction(save_act);
 
-    auto* save_as_act = new QAction("Save As", this);
+    auto* save_as_act = new QAction("Save &As...", this);
+    save_as_act->setShortcut(QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::Key_S));
     connect(save_as_act, &QAction::triggered, this, &MainWindow::saveAsFile);
     file_menu->addAction(save_as_act);
 
@@ -159,7 +169,11 @@ MainWindow::MainWindow(QWidget* parent)
     m_seedEdit->setPlaceholderText("Enter seed value...");
     m_seedEdit->setFixedWidth(200);
     seed_layout->addWidget(m_seedEdit);
-    m_randomSeedBtn = new QPushButton("Random");
+    m_randomSeedBtn = new QPushButton;
+    m_randomSeedBtn->setIcon(QIcon(":/dice"));
+    m_randomSeedBtn->setIconSize(QSize(24, 24));
+    m_randomSeedBtn->setMinimumSize(QSize(40, 32));
+    m_randomSeedBtn->setMaximumSize(QSize(40, 32));
     m_randomSeedBtn->setToolTip("Random seed");
     seed_layout->addWidget(m_randomSeedBtn);
     connect(m_randomSeedBtn, &QPushButton::clicked, this, [this]() {
@@ -492,6 +506,31 @@ void MainWindow::showSizeManager() {
 }
 
 
+
+void MainWindow::newFile() {
+    if (m_dirty) {
+        QMessageBox::StandardButton ret = QMessageBox::warning(this, "Unsaved Changes", "Save changes before creating a new file?",
+                                                               QMessageBox::Save | QMessageBox::Discard | QMessageBox::Cancel);
+        if (ret == QMessageBox::Save) {
+            if (!saveFile()) return;
+        } else if (ret == QMessageBox::Cancel) {
+            return;
+        }
+    }
+    //m_currentSavePath.clear();
+    m_dirty = false;
+    //m_sourceImageEdit->clear();
+    //m_promptEdit->clear();
+    //m_negativePromptEdit->clear();
+    //m_seedEdit->clear();
+    //m_filenameEdit->clear();
+    SettingsManager::instance().m_models = {};
+    loadSizeConfig({});
+    refreshDropDowns();
+
+    updateWindowTitle();
+    statusBar()->showMessage("New file");
+}
 
 void MainWindow::newModel() {
     NewModelDialog dlg(this);

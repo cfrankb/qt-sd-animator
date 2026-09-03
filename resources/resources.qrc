@@ -1,0 +1,6 @@
+<RCC>
+    <qresource>
+        <file alias="dice">dice-png-41785.png</file>
+        <file alias="app_icon">Mime.png</file>
+    </qresource>
+</RCC>

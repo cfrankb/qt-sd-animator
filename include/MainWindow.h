@@ -39,6 +39,7 @@ private slots:
     void openRecent();
     bool saveFile();
     bool saveAsFile();
+    void newFile();
     void showGeneralSettings();
     void showModelManager();
     void showSizeManager();
